@@ -366,7 +366,7 @@ const MODES = {
   single:  { name: "Treino", desc: "Palavras aleatórias, quantas quiseres" },
   duo:     { name: "Dueto", desc: "2 palavras ao mesmo tempo, 7 tentativas" },
   quartet: { name: "Quarteto", desc: "4 palavras ao mesmo tempo, 9 tentativas" },
-  timed:   { name: "Contra-relógio", desc: "Quantas palavras acertas em 3 minutos?" }
+  timed:   { name: "Contra-relógio", desc: "Começas com 3 minutos; cada palavra certa dá tempo extra" }
 };
 const ACH = {
   primeira: ["Primeira vitória", "Ganha um jogo do dia"],
@@ -734,6 +734,7 @@ function renderBar(){
     const left = prac && prac.status === "playing" ? Math.max(0, Math.ceil((pracEnds - Date.now()) / 1000)) : 0;
     add(`<span class="lbl">Contra-relógio</span><span class="timer${left <= 20 && prac && prac.status === "playing" ? " low" : ""}" id="timer">${Math.floor(left / 60)}:${pad(left % 60)}</span><span class="score" id="tscore">✓ ${prac ? prac.score : 0}</span>`);
     if (!prac || prac.status !== "playing"){ add(`<button class="btn primary small" id="barStart" type="button">Começar</button>`); $("#barStart").onclick = startTimed; }
+    else { add(`<button class="btn ghost small" id="barSkip" type="button">Saltar</button>`); $("#barSkip").onclick = skipTimed; }
     return;
   }
   add(`<span class="lbl">${MODES[mode].name}</span>`);
@@ -851,7 +852,9 @@ async function openArchiveDay(d){
 function stopTimed(){ clearInterval(timedTick); timedTick = null; }
 function showTimedIntro(){
   openModal(`<h2>Contra-relógio</h2>
-    <p>Tens <b>3 minutos</b> para acertar o máximo de palavras. Cada palavra tem 6 tentativas; se falhares, passa à seguinte.</p>
+    <p>Começas com <b>3 minutos</b>. Cada palavra certa dá tempo extra:</p>
+    <ul><li><b>+90 segundos</b> se acertares em 1 a 3 tentativas</li><li><b>+60 segundos</b> em 4 ou 5 tentativas</li><li><b>+30 segundos</b> à 6.ª tentativa</li></ul>
+    <p>Se falhares as 6 tentativas, ou tocares em <b>Saltar</b>, passas à palavra seguinte sem bónus. O jogo acaba quando o tempo chegar a zero.</p>
     <p>Não conta para o ranking diário, mas tem um ranking próprio com o teu melhor resultado.</p>
     <div class="center"><button class="btn primary" id="tGo" type="button">Começar</button></div>`);
   $("#tGo").onclick = startTimed;
@@ -871,15 +874,33 @@ function tickTimed(){
   const t = $("#timer"); if (t){ t.textContent = `${Math.floor(left / 60)}:${pad(left % 60)}`; t.classList.toggle("low", left <= 20); }
   if (left <= 0 && !timedEnding && !busy) endTimed();
 }
+async function skipTimed(){
+  if (busy || !prac || prac.mode !== "timed" || prac.status !== "playing") return;
+  busy = true;
+  try{
+    const res = await rpc("practice_skip", { p_id: prac.id });
+    busy = false;
+    if (res.time_over){ prac = res; endTimed(); return; }
+    prac = res; pracEnds = Date.now() + res.seconds_left * 1000; resetCur(); builtShape = "";
+    toast(`Era ${res.last.answer}`, 1600);
+    renderAll(); boardsEl.classList.remove("flash"); void boardsEl.offsetWidth; boardsEl.classList.add("flash");
+  }catch(e){ busy = false; toast(errMsg(e)); }
+}
 async function endTimed(){
   timedEnding = true; stopTimed();
   let r;
   try{ r = await rpc("practice_finish", { p_id: prac.id }); }catch(e){ r = Object.assign({}, prac, { status: "done", best: prac.score }); }
-  prac = r; renderAll();
+  if (r.status === "playing" && r.seconds_left > 1){
+    // the server still has time left (e.g. a bonus this screen missed): keep playing with the server's clock
+    prac = r; pracEnds = Date.now() + r.seconds_left * 1000; timedEnding = false;
+    renderAll(); timedTick = setInterval(tickTimed, 250); return;
+  }
+  if (r.status === "playing") r = Object.assign({}, r, { status: "done" });
+  prac = r; resetCur(); renderAll();
   const ans = r.boards && r.boards[0] && r.boards[0].answer;
   openModal(`<h2>Tempo!</h2>
     <div class="result"><span class="word" style="font-size:44px">${r.score}</span><br>${r.score === 1 ? "palavra acertada" : "palavras acertadas"}</div>
-    ${ans ? `<p class="note">A última palavra era <b>${esc(ans)}</b>.</p>` : ""}
+    ${ans ? `<div class="result" style="margin-top:14px">A última palavra era<br><span class="word">${esc(ans)}</span></div>` : ""}
     <p class="note">O teu melhor resultado: <b>${r.best}</b></p>
     <div class="center"><button class="btn primary" id="tAgain" type="button">Jogar outra vez</button><button class="btn ghost" id="tRank" type="button">Ranking</button><button class="btn ghost" id="tHome" type="button">Início</button></div>`);
   $("#tHome").onclick = showHome;
@@ -957,7 +978,7 @@ function showHelp(){
   <h4>Modo difícil</h4>
   <p>As letras que já descobriste têm de ser usadas: as verdes no mesmo sítio, as amarelas em qualquer sítio. Cada vitória em modo difícil vale <b>+1 ponto</b>. Liga-o nas Definições; vale a partir do jogo seguinte que começares.</p>
   <h4>Treinar</h4>
-  <p>No ecrã inicial (botão de quadrados, em cima à esquerda) tens o Arquivo (dias anteriores), o Treino (palavras aleatórias), o Dueto e o Quarteto (2 ou 4 palavras ao mesmo tempo, com 7 e 9 tentativas) e o Contra-relógio (quantas palavras acertas em 3 minutos). Nenhum conta para o ranking diário.</p>`);
+  <p>No ecrã inicial (botão de quadrados, em cima à esquerda) tens o Arquivo (dias anteriores), o Treino (palavras aleatórias), o Dueto e o Quarteto (2 ou 4 palavras ao mesmo tempo, com 7 e 9 tentativas) e o Contra-relógio (começas com 3 minutos e cada palavra certa dá tempo extra). Nenhum conta para o ranking diário.</p>`);
 }
 
 /* settings */
@@ -1192,7 +1213,7 @@ async function showRanking(arg){
   const cats = [["points", "Pontos"], ["speed", "Rapidez"], ["timed", "Contra-relógio"]];
   const pers = [["day", "Hoje"], ["week", "Semana"], ["month", "Mês"], ["all", "Sempre"]];
   const weekNote = per === "week" ? "Semana de segunda a domingo. " : "";
-  const note = cat === "timed" ? "Melhor número de palavras acertadas em 3 minutos."
+  const note = cat === "timed" ? "Melhor número de palavras acertadas num contra-relógio."
     : cat === "speed" ? `Tempo médio das vitórias, da 1.ª à última tentativa. ${weekNote}Jogos com mais de 30 minutos e jogos importados não contam.`
     : `${weekNote}Pontos: 6 por acertar à 1.ª tentativa, 5 à 2.ª … 1 à 6.ª, +1 em modo difícil. Em caso de empate, conta quem ganhou mais jogos e depois o tempo médio.`;
   const m = openModal(`<h3>Rankings</h3>
@@ -1416,7 +1437,8 @@ async function submitPractice(word, rowEls){
       const lr = last.rows[last.rows.length - 1];
       animateRows(rowEls, [lr.colors], [lr.word], () => {
         prac = res; busy = false; builtShape = "";
-        toast(last.solved ? `✓ ${last.answer}` : `Era ${last.answer}`, 1400);
+        pracEnds = Date.now() + res.seconds_left * 1000;
+        toast(last.solved ? `✓ ${last.answer}  +${last.bonus}s` : `Era ${last.answer}`, 1600);
         renderAll(); boardsEl.classList.remove("flash"); void boardsEl.offsetWidth; boardsEl.classList.add("flash");
         if (Date.now() >= pracEnds) endTimed();
       });
@@ -1428,7 +1450,7 @@ async function submitPractice(word, rowEls){
   before.boards.forEach((b, bi) => { if (!b.solved){ const rr = res.boards[bi].rows; const lr = rr[rr.length - 1]; evs.push(lr.colors); words.push(lr.word); targets.push(bi); } });
   animateRows(rowEls, evs, words, () => {
     prac = res; busy = false; renderAll();
-    if (prac.mode === "timed"){ if (Date.now() >= pracEnds) endTimed(); return; }
+    if (prac.mode === "timed"){ if (res.seconds_left != null) pracEnds = Date.now() + res.seconds_left * 1000; if (Date.now() >= pracEnds) endTimed(); return; }
     if (res.status === "won" || res.status === "lost") setTimeout(showPracticeEnd, res.status === "won" ? 900 : 1300);
   });
 }
