@@ -5,133 +5,145 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Palavrle</title>
 <meta name="description" content="Adivinha a palavra de cinco letras. Cinco jogos por dia, em português de Portugal.">
+<meta name="theme-color" content="#538d4e">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Palavrle">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700;800&family=Zilla+Slab:wght@700&display=swap">
 <style>
-:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box;height:100%}
-[hidden]{display:none!important}
-
-/* Layout: one-screen app, header / game picker / board (flex fill) / keyboard pinned to the bottom, like the original */
+/* Layout: one-screen app — header / mode bar / board area (flex fill, 1, 2 or 4 boards) / keyboard pinned to the bottom */
 :root{
-  --bg:#ffffff; --fg:#1a1a1b; --muted:#787c7e; --line:#d3d6da; --line-strong:#878a8c;
+  --bg:#ffffff; --fg:#1a1a1b; --muted:#6b6f72; --line:#d3d6da; --line-strong:#878a8c;
   --correct:#6aaa64; --present:#c9b458; --absent:#787c7e; --on-color:#ffffff;
-  --key:#d3d6da; --key-fg:#1a1a1b; --overlay:rgba(255,255,255,.55); --card:#ffffff; --shadow:rgba(0,0,0,.18);
-  --toast-bg:#1a1a1b; --toast-fg:#ffffff; --wa:#1f9d55; --err:#b3261e; --hl:#eef5ec;
+  --cb-correct:#f5793a; --cb-present:#85c0f9;
+  --key:#d3d6da; --key-fg:#1a1a1b; --overlay:rgba(255,255,255,.6); --card:#ffffff; --shadow:rgba(0,0,0,.18);
+  --toast-bg:#1a1a1b; --toast-fg:#ffffff; --wa:#1f9d55; --err:#b3261e; --hl:#eef5ec; --soft:#f3f4f5;
   --f-ui:"Libre Franklin","Helvetica Neue",Arial,sans-serif;
   --f-title:"Zilla Slab",Georgia,"Times New Roman",serif;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box;height:100%;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#121213; --fg:#f8f8f8; --muted:#818384; --line:#3a3a3c; --line-strong:#565758;
+  --bg:#121213; --fg:#f8f8f8; --muted:#9a9c9e; --line:#3a3a3c; --line-strong:#565758;
   --correct:#538d4e; --present:#b59f3b; --absent:#3a3a3c; --on-color:#ffffff;
-  --key:#818384; --key-fg:#ffffff; --overlay:rgba(0,0,0,.5); --card:#121213; --shadow:rgba(0,0,0,.6);
-  --toast-bg:#f8f8f8; --toast-fg:#121213; --err:#ff8a7a; --hl:#1f2a1e; color-scheme:dark}}
+  --cb-correct:#f5793a; --cb-present:#85c0f9;
+  --key:#818384; --key-fg:#ffffff; --overlay:rgba(0,0,0,.55); --card:#121213; --shadow:rgba(0,0,0,.6);
+  --toast-bg:#f8f8f8; --toast-fg:#121213; --wa:#1f9d55; --err:#ff8a7a; --hl:#1f2a1e; --soft:#1d1d1f; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#121213; --fg:#f8f8f8; --muted:#818384; --line:#3a3a3c; --line-strong:#565758;
+  --bg:#121213; --fg:#f8f8f8; --muted:#9a9c9e; --line:#3a3a3c; --line-strong:#565758;
   --correct:#538d4e; --present:#b59f3b; --absent:#3a3a3c; --on-color:#ffffff;
-  --key:#818384; --key-fg:#ffffff; --overlay:rgba(0,0,0,.5); --card:#121213; --shadow:rgba(0,0,0,.6);
-  --toast-bg:#f8f8f8; --toast-fg:#121213; --err:#ff8a7a; --hl:#1f2a1e; color-scheme:dark}
-
+  --cb-correct:#f5793a; --cb-present:#85c0f9;
+  --key:#818384; --key-fg:#ffffff; --overlay:rgba(0,0,0,.55); --card:#121213; --shadow:rgba(0,0,0,.6);
+  --toast-bg:#f8f8f8; --toast-fg:#121213; --wa:#1f9d55; --err:#ff8a7a; --hl:#1f2a1e; --soft:#1d1d1f; color-scheme:dark}
+[hidden]{display:none!important}
 html,body{height:100%}
-body{background:var(--bg);color:var(--fg);font-family:var(--f-ui);margin:0;overflow:hidden;
+body{--tc:var(--correct);--tp:var(--present);background:var(--bg);color:var(--fg);font-family:var(--f-ui);margin:0;overflow:hidden;
   -webkit-tap-highlight-color:transparent;touch-action:manipulation}
-#app{height:100%;display:flex;flex-direction:column;max-width:520px;margin:0 auto;
+body.cb{--tc:var(--cb-correct);--tp:var(--cb-present)}
+
+#app{height:100%;display:flex;flex-direction:column;max-width:560px;margin:0 auto;
   padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px));box-sizing:border-box}
 header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:52px;border-bottom:1px solid var(--line);flex:none}
-header h1{margin:0;font-family:var(--f-title);font-weight:700;font-size:30px;letter-spacing:.06em;text-transform:uppercase}
-.hbtns{display:flex;gap:4px}
+header h1{margin:0;font-family:var(--f-title);font-weight:700;font-size:28px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+.hbtns{display:flex;gap:2px}
 .hbtns.right{justify-content:flex-end}
-.icon-btn{background:none;border:0;color:var(--fg);width:40px;height:40px;display:grid;place-items:center;cursor:pointer;border-radius:6px}
-.icon-btn:focus-visible,.key:focus-visible,.pick:focus-visible,.btn:focus-visible{outline:2px solid var(--present);outline-offset:2px}
+.icon-btn{background:none;border:0;color:var(--fg);width:40px;height:40px;display:grid;place-items:center;cursor:pointer;border-radius:6px;padding:0}
 .icon-btn svg{width:24px;height:24px}
+:is(.icon-btn,.key,.pick,.btn,.tab,.menu-item,.linkbtn,.switch):focus-visible{outline:2px solid var(--tp);outline-offset:2px}
 
-#picker{display:flex;justify-content:center;align-items:center;gap:8px;padding:10px 0 2px;flex:none}
-#picker .lbl{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-right:4px}
-.pick{width:34px;height:34px;border:2px solid var(--line);background:var(--bg);color:var(--fg);font:700 15px var(--f-ui);cursor:pointer;border-radius:4px;padding:0}
+#bar{display:flex;justify-content:center;align-items:center;gap:8px;padding:8px 0 0;flex:none;min-height:38px;flex-wrap:wrap}
+#bar .lbl{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.chip{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line-strong);border-radius:999px;padding:3px 8px;color:var(--fg)}
+.chip.warn{border-color:var(--tp);color:var(--fg)}
+.timer{font-variant-numeric:tabular-nums;font-weight:800;font-size:20px;min-width:64px;text-align:center}
+.timer.low{color:var(--err)}
+.score{font-weight:800;font-size:16px;font-variant-numeric:tabular-nums}
+.pick{width:32px;height:32px;border:2px solid var(--line);background:var(--bg);color:var(--fg);font:700 14px var(--f-ui);cursor:pointer;border-radius:4px;padding:0}
 .pick.on{border-color:var(--fg)}
-.pick.won{background:var(--correct);border-color:var(--correct);color:var(--on-color)}
+.pick.won{background:var(--tc);border-color:var(--tc);color:var(--on-color)}
 .pick.lost{background:var(--absent);border-color:var(--absent);color:var(--on-color)}
 .pick.won.on,.pick.lost.on{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--fg)}
+.btn.small{height:32px;font-size:13px;padding:0 12px}
 
-#boardWrap{flex:1 1 auto;display:flex;align-items:center;justify-content:center;min-height:0;padding:8px 0}
-#board{display:grid;grid-template-rows:repeat(6,1fr);gap:5px;width:var(--bw,330px);height:calc(var(--bw,330px)*1.2)}
-.row{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+#boardWrap{flex:1 1 auto;display:flex;align-items:center;justify-content:center;min-height:0;padding:8px 0;overflow:hidden}
+#boards{display:grid;gap:var(--bgap,12px);grid-template-columns:repeat(var(--bcols,1),auto)}
+.board{display:grid;gap:var(--g,5px);grid-template-rows:repeat(var(--rows,6),var(--t,62px));position:relative}
+.board.solved{opacity:.92}
+.row{display:grid;grid-template-columns:repeat(5,var(--t,62px));gap:var(--g,5px)}
 .tile{display:flex;align-items:center;justify-content:center;border:2px solid var(--line);font-weight:700;
-  font-size:calc(var(--bw,330px)*.1);text-transform:uppercase;line-height:1;user-select:none;box-sizing:border-box}
+  font-size:calc(var(--t,62px)*.52);text-transform:uppercase;line-height:1;user-select:none;box-sizing:border-box}
 .tile.filled{border-color:var(--line-strong);animation:pop .1s ease-out}
 .tile.active{cursor:pointer}
-.tile.cursor{border-color:var(--line-strong);box-shadow:inset 0 -5px 0 var(--fg)}
+.tile.cursor{border-color:var(--line-strong);box-shadow:inset 0 -4px 0 var(--fg)}
 .tile.correct,.tile.present,.tile.absent{color:var(--on-color);border-color:transparent}
-.tile.correct{background:var(--correct)} .tile.present{background:var(--present)} .tile.absent{background:var(--absent)}
+.tile.correct{background:var(--tc)} .tile.present{background:var(--tp)} .tile.absent{background:var(--absent)}
 .tile.flip-in{animation:flipIn .25s ease-in forwards}
 .tile.flip-out{animation:flipOut .25s ease-out forwards}
 .row.shake{animation:shake .5s}
 .tile.bounce{animation:bounce .9s}
+.flash{animation:flash .6s}
 @keyframes pop{0%{transform:scale(.85)}60%{transform:scale(1.08)}100%{transform:scale(1)}}
 @keyframes flipIn{from{transform:rotateX(0)}to{transform:rotateX(-90deg)}}
 @keyframes flipOut{from{transform:rotateX(-90deg)}to{transform:rotateX(0)}}
 @keyframes shake{10%,90%{transform:translateX(-1px)}20%,80%{transform:translateX(2px)}30%,50%,70%{transform:translateX(-4px)}40%,60%{transform:translateX(4px)}}
 @keyframes bounce{0%,20%{transform:translateY(0)}40%{transform:translateY(-30px)}50%{transform:translateY(5px)}60%{transform:translateY(-15px)}80%{transform:translateY(2px)}100%{transform:translateY(0)}}
-@media (prefers-reduced-motion:reduce){.tile,.row,.tile.filled{animation:none!important}}
+@keyframes flash{0%{opacity:.3}100%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.tile,.row,.tile.filled,.flash{animation:none!important}}
 
-#keyboard{flex:none;padding:0 0 max(8px,env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;user-select:none}
+#keyboard{flex:none;padding:0 0 max(8px,env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:7px;user-select:none}
 .krow{display:grid;grid-template-columns:repeat(20,1fr);gap:6px}
-.key{grid-column:span 2;height:58px;border:0;border-radius:4px;background:var(--key);color:var(--key-fg);
+.key{grid-column:span 2;height:56px;border:0;border-radius:4px;background:var(--key);color:var(--key-fg);
   font:700 14px var(--f-ui);text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
 .key.wide{grid-column:span 3;font-size:12px}
 .key svg{width:22px;height:22px}
 .spacer{grid-column:span 2}
-.key.correct{background:var(--correct);color:var(--on-color)}
-.key.present{background:var(--present);color:var(--on-color)}
+.key.correct{background:var(--tc);color:var(--on-color)}
+.key.present{background:var(--tp);color:var(--on-color)}
 .key.absent{background:var(--absent);color:var(--on-color)}
-@media (max-height:640px){.key{height:50px}}
-@media (max-height:560px){.key{height:44px}#picker{padding-top:6px}}
+.key.multi{color:var(--on-color);text-shadow:0 0 3px rgba(0,0,0,.55)}
+@media (max-height:640px){.key{height:48px}}
+body[data-boards="4"] .key,body[data-boards="2"] .key{height:46px}
+@media (max-height:560px){.key{height:42px}}
 
-#toasts{position:fixed;top:calc(env(safe-area-inset-top,0px) + 70px);left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;z-index:30}
-.toast{background:var(--toast-bg);color:var(--toast-fg);font-weight:700;font-size:14px;padding:12px 16px;border-radius:4px;transition:opacity .3s}
+#toasts{position:fixed;top:calc(env(safe-area-inset-top,0px) + 96px);left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;z-index:50;padding:0 16px}
+.toast{background:var(--toast-bg);color:var(--toast-fg);font-weight:700;font-size:14px;padding:12px 16px;border-radius:4px;transition:opacity .3s;display:flex;align-items:center;gap:12px;max-width:100%}
+.toast button{pointer-events:auto;background:none;border:1px solid var(--toast-fg);color:var(--toast-fg);border-radius:4px;font:700 13px var(--f-ui);padding:5px 10px;cursor:pointer}
 
 .overlay{position:fixed;inset:0;background:var(--overlay);display:flex;align-items:center;justify-content:center;z-index:20;
   padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 .modal{background:var(--card);color:var(--fg);border-radius:8px;box-shadow:0 4px 23px var(--shadow);width:100%;max-width:480px;
   max-height:100%;overflow-y:auto;padding:16px 20px 24px;box-sizing:border-box;position:relative;border:1px solid var(--line)}
 .modal .close{position:absolute;top:8px;right:8px}
-.modal h2{font-family:var(--f-title);font-size:26px;margin:8px 0 4px;text-wrap:balance}
+.modal h2{font-family:var(--f-title);font-size:26px;margin:8px 40px 4px 0;text-wrap:balance}
 .modal h3{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin:22px 0 10px;text-align:center}
+.modal h4{font-size:15px;margin:16px 0 4px}
 .modal p,.modal li{font-size:15px;line-height:1.45}
 .modal ul{padding-left:20px;margin:8px 0}
 .ex{display:flex;gap:4px;margin:10px 0 4px}
-.ex .tile{width:38px;height:38px;font-size:22px;animation:none}
+.ex .tile{width:36px;height:36px;font-size:20px;animation:none}
 .ex .tile.plain{border-color:var(--line-strong)}
-.statrow{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;text-align:center}
-.stat b{display:block;font-size:30px;font-weight:500;font-variant-numeric:tabular-nums}
-.stat span{font-size:11px;line-height:1.2;display:block}
-.dist{display:flex;flex-direction:column;gap:4px;max-width:340px;margin:0 auto}
-.drow{display:flex;align-items:center;gap:6px;font-size:14px;font-variant-numeric:tabular-nums}
-.drow i{font-style:normal;width:10px;text-align:right}
-.bar{background:var(--absent);color:var(--on-color);font-weight:700;padding:2px 8px;text-align:right;min-width:24px;box-sizing:border-box}
-.bar.hl{background:var(--correct)}
-.today{display:flex;justify-content:center;gap:8px}
-.today .pick{cursor:default}
-.today .pick.free{cursor:pointer}
-.foot{display:flex;align-items:center;gap:16px;margin-top:22px}
-.foot .next{flex:1;text-align:center;border-right:1px solid var(--line);padding-right:12px}
-.foot .next small{display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
-.foot .next b{font-size:30px;font-weight:500;font-variant-numeric:tabular-nums}
-.foot .acts{flex:1;display:flex;flex-direction:column;gap:8px}
-.btn{border:0;border-radius:24px;height:46px;padding:0 18px;font:700 15px var(--f-ui);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
-.btn.primary{background:var(--correct);color:var(--on-color)}
-.btn.ghost{background:none;color:var(--fg);border:1px solid var(--line-strong)}
-.btn.wa{background:var(--wa);color:var(--on-color);text-decoration:none}
-.btn.wa svg{width:20px;height:20px}
-.share{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-.share .btn{flex:1 1 120px}
-.alldone{font-weight:700;text-align:center;font-size:15px}
-.result{text-align:center;margin:6px 0 0}
-.result .word{display:inline-block;font-weight:800;letter-spacing:.12em;font-size:22px;margin-top:4px}
-.copybox{width:100%;height:120px;margin-top:10px;font:14px/1.3 var(--f-ui);background:var(--bg);color:var(--fg);border:1px solid var(--line)}
-.note{font-size:12px;color:var(--muted);text-align:center;margin-top:14px}
 
-/* accounts, ranking, profile */
+/* side menu */
+#menu{position:fixed;inset:0;z-index:25;background:var(--overlay)}
+#menu .panel{position:absolute;top:0;bottom:0;left:0;width:min(300px,86vw);background:var(--card);border-right:1px solid var(--line);
+  box-shadow:4px 0 20px var(--shadow);overflow-y:auto;display:flex;flex-direction:column;
+  padding:calc(env(safe-area-inset-top,0px) + 12px) 12px calc(env(safe-area-inset-bottom,0px) + 16px) max(12px,env(safe-area-inset-left,0px));box-sizing:border-box}
+.menu-title{font-family:var(--f-title);font-size:24px;text-transform:uppercase;letter-spacing:.06em;padding:4px 8px 12px}
+.menu-sec{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:14px 8px 6px}
+.menu-item{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;color:var(--fg);font:600 15px var(--f-ui);text-align:left;padding:11px 8px;border-radius:6px;cursor:pointer}
+.menu-item:hover{background:var(--soft)}
+.menu-item.on{background:var(--hl)}
+.menu-item small{display:block;font-weight:400;font-size:12px;color:var(--muted);margin-top:2px}
+.menu-item .ico{width:28px;height:28px;flex:none;display:grid;grid-template-columns:repeat(2,1fr);gap:2px}
+.menu-item .ico i{background:var(--absent);border-radius:2px}
+.menu-item .ico i.c{background:var(--tc)} .menu-item .ico i.p{background:var(--tp)}
+
+/* gate */
 #gate{position:fixed;inset:0;background:var(--bg);z-index:40;overflow-y:auto;display:flex;justify-content:center;
   padding:max(24px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));box-sizing:border-box}
 .gate-in{width:100%;max-width:360px;display:flex;flex-direction:column;gap:14px;margin:auto 0}
@@ -139,97 +151,231 @@ header h1{margin:0;font-family:var(--f-title);font-weight:700;font-size:30px;let
 .gate-tiles{display:flex;justify-content:center;gap:5px}
 .gate-tiles .tile{width:40px;height:40px;font-size:22px;animation:none}
 .gate-in p{margin:0;text-align:center;line-height:1.45;font-size:15px}
-.gate-in .sub{color:var(--muted);font-size:13px}
+.sub{color:var(--muted);font-size:13px}
 .field{display:flex;flex-direction:column;gap:6px}
 .field label{font-size:13px;font-weight:600}
-.field input{height:46px;border:1px solid var(--line-strong);border-radius:6px;background:var(--bg);color:var(--fg);font:16px var(--f-ui);padding:0 12px}
-.field input:focus{outline:2px solid var(--present);outline-offset:0}
-.btn.full{width:100%}
+.field input,.inp{height:44px;border:1px solid var(--line-strong);border-radius:6px;background:var(--bg);color:var(--fg);font:16px var(--f-ui);padding:0 12px;box-sizing:border-box;min-width:0}
+.field input:focus,.inp:focus{outline:2px solid var(--tp);outline-offset:0}
+.btn{border:0;border-radius:24px;height:44px;padding:0 18px;font:700 15px var(--f-ui);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
+.btn.primary{background:var(--tc);color:var(--on-color)}
+.btn.ghost{background:none;color:var(--fg);border:1px solid var(--line-strong)}
+.btn.danger{background:none;color:var(--err);border:1px solid var(--err)}
+.btn.wa{background:var(--wa);color:var(--on-color)}
+.btn.wa svg{width:20px;height:20px}
 .btn.google{background:var(--bg);color:var(--fg);border:1px solid var(--line-strong)}
 .btn.google svg{width:18px;height:18px}
+.btn.full{width:100%}
 .btn[disabled]{opacity:.6;cursor:default}
 .divider{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
 .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
 .linkbtn{background:none;border:0;color:var(--fg);font:600 14px var(--f-ui);text-decoration:underline;cursor:pointer;padding:4px;align-self:center}
 .err{color:var(--err);font-size:14px;text-align:center;min-height:1em;margin:0}
-.ok{color:var(--correct);font-size:14px;text-align:center;margin:0}
-.tabs{display:flex;border-bottom:1px solid var(--line);margin:6px 0 10px}
-.tab{flex:1;background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);font:700 14px var(--f-ui);height:42px;cursor:pointer}
-.tab.on{color:var(--fg);border-bottom-color:var(--correct)}
+.ok{color:var(--tc);font-size:14px;text-align:center;margin:0;font-weight:700}
+
+/* stats */
+.statrow{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 4px;text-align:center}
+.statrow.four{grid-template-columns:repeat(4,1fr)}
+.tabs.seg{border-bottom:0;background:var(--soft);border-radius:8px;padding:3px;gap:3px;margin-bottom:4px}
+.tabs.seg .tab{border-bottom:0;border-radius:6px;height:34px}
+.tabs.seg .tab.on{background:var(--card);box-shadow:0 1px 3px var(--shadow)}
+.stat b{display:block;font-size:28px;font-weight:500;font-variant-numeric:tabular-nums}
+.stat span{font-size:11px;line-height:1.2;display:block}
+.dist{display:flex;flex-direction:column;gap:4px;max-width:340px;margin:0 auto}
+.drow{display:flex;align-items:center;gap:6px;font-size:14px;font-variant-numeric:tabular-nums}
+.drow i{font-style:normal;width:10px;text-align:right}
+.bar{background:var(--absent);color:var(--on-color);font-weight:700;padding:2px 8px;text-align:right;min-width:24px;box-sizing:border-box}
+.bar.hl{background:var(--tc)}
+.today{display:flex;justify-content:center;gap:8px}
+.today .pick{cursor:pointer}
+.foot{display:flex;align-items:center;gap:16px;margin-top:20px}
+.foot .next{flex:1;text-align:center;border-right:1px solid var(--line);padding-right:12px}
+.foot .next small{display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.foot .next b{font-size:28px;font-weight:500;font-variant-numeric:tabular-nums}
+.foot .acts{flex:1;display:flex;flex-direction:column;gap:8px}
+.share{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.share .btn{flex:1 1 110px}
+.alldone{font-weight:700;text-align:center;font-size:15px}
+.result{text-align:center;margin:6px 0 0}
+.result .word{display:inline-block;font-weight:800;letter-spacing:.12em;font-size:22px;margin-top:4px}
+.result .others{margin-top:10px;font-size:14px;color:var(--muted)}
+.center{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:12px}
+.copybox{width:100%;height:120px;margin-top:10px;font:14px/1.3 var(--f-ui);background:var(--bg);color:var(--fg);border:1px solid var(--line)}
+.note{font-size:12px;color:var(--muted);text-align:center;margin-top:14px}
+.loading{text-align:center;color:var(--muted);padding:30px 0}
+.empty{text-align:center;color:var(--muted);padding:24px 0;font-size:15px}
+.prof-head{text-align:center}
+.prof-head h2{margin-right:0}
+.prof-head small{color:var(--muted);font-size:13px}
+.recent{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.rday{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.rday b{width:100%;aspect-ratio:1;max-width:44px;border-radius:4px;display:grid;place-items:center;font-size:14px;color:var(--on-color);background:var(--line)}
+.rday b.l1{background:var(--tp)} .rday b.l2{background:var(--tc)} .rday b.l0{background:var(--absent)}
+.rday b.none{color:var(--muted);background:none;border:1px dashed var(--line-strong);box-sizing:border-box}
+.prof-actions{display:flex;justify-content:center;gap:8px;margin-top:18px;flex-wrap:wrap}
+
+/* achievements */
+.ach{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.badge{border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;gap:10px;align-items:flex-start;min-width:0}
+.badge .medal{width:30px;height:30px;flex:none;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:14px;background:var(--line);color:var(--muted)}
+.badge.ok .medal{background:var(--tc);color:var(--on-color)}
+.badge b{display:block;font-size:13px}
+.badge span{display:block;font-size:11px;color:var(--muted);line-height:1.3}
+.badge:not(.ok){opacity:.7}
+
+/* mini grids */
+.minis{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:12px 8px}
+.mini{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.mini .g{display:grid;grid-template-columns:repeat(5,12px);gap:2px}
+.mini .g i{width:12px;height:12px;border-radius:2px;background:var(--absent)}
+.mini .g i.correct{background:var(--tc)} .mini .g i.present{background:var(--tp)} .mini .g i.absent{background:var(--absent)}
+.mini .nm{font-size:12px;font-weight:700;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:none;border:0;color:var(--fg);cursor:pointer;padding:0;font-family:var(--f-ui)}
+.mini .sc{font-size:11px;color:var(--muted)}
+.mini.me .nm{text-decoration:underline}
+.hday{border-top:1px solid var(--line);padding:12px 0}
+.hday h4{margin:0 0 8px;font-size:13px;color:var(--muted);font-weight:700}
+.hgames{display:flex;flex-wrap:wrap;gap:12px}
+.hgame{display:flex;flex-direction:column;gap:4px;align-items:center}
+.hgame .w{font-size:11px;font-weight:800;letter-spacing:.08em}
+
+/* ranking */
+.tabs{display:flex;border-bottom:1px solid var(--line);margin:6px 0 10px;overflow-x:auto;scrollbar-width:none}
+.tab{flex:1 0 auto;background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);font:700 13px var(--f-ui);height:40px;cursor:pointer;padding:0 10px}
+.tab.on{color:var(--fg);border-bottom-color:var(--tc)}
 .lb{display:flex;flex-direction:column}
-.lbrow{display:grid;grid-template-columns:34px minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:9px 6px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.lbrow{display:grid;grid-template-columns:30px minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:9px 6px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
 .lbrow.me{background:var(--hl)}
 .lbrow .pos{font-weight:700;text-align:center;color:var(--muted)}
 .lbrow .nm{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:none;border:0;color:var(--fg);font-size:15px;text-align:left;cursor:pointer;padding:0;font-family:var(--f-ui)}
 .lbrow .wl{font-size:13px;color:var(--muted);text-align:right}
 .lbrow .pts{font-weight:800;min-width:44px;text-align:right}
-.lbhead{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--line-strong);padding-top:0}
+.lbhead{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--line-strong)}
 .lbhead .nm{font-weight:600;font-size:11px;cursor:default}
 .lbmine{margin-top:10px;border-top:2px solid var(--line-strong)}
-.empty{text-align:center;color:var(--muted);padding:24px 0;font-size:15px}
-.prof-head{text-align:center}
-.prof-head small{color:var(--muted);font-size:13px}
-.recent{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-.rday{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
-.rday b{width:100%;aspect-ratio:1;max-width:44px;border-radius:4px;display:grid;place-items:center;font-size:14px;color:var(--on-color);background:var(--line)}
-.rday b.l1{background:var(--present)} .rday b.l2{background:var(--correct)} .rday b.l0{background:var(--absent)}
-.rday b.none{color:var(--muted);background:none;border:1px dashed var(--line-strong);box-sizing:border-box}
-.prof-actions{display:flex;justify-content:center;gap:8px;margin-top:18px;flex-wrap:wrap}
-.loading{text-align:center;color:var(--muted);padding:30px 0}
-.statrow.six{grid-template-columns:repeat(3,1fr);row-gap:14px}
+
+/* settings */
+.setting{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}
+.setting b{display:block;font-size:15px}
+.setting span{display:block;font-size:13px;color:var(--muted);margin-top:2px;line-height:1.35}
+.switch{width:46px;height:28px;border-radius:14px;border:0;background:var(--line-strong);position:relative;cursor:pointer;flex:none;padding:0}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--bg);transition:left .15s}
+.switch[aria-checked="true"]{background:var(--tc)}
+.switch[aria-checked="true"]::after{left:21px}
+
+/* archive + admin */
+.days{display:flex;flex-direction:column}
+.dayrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 6px;border-bottom:1px solid var(--line);background:none;border-left:0;border-right:0;border-top:0;color:var(--fg);font:600 15px var(--f-ui);cursor:pointer;text-align:left;width:100%}
+.dayrow span{color:var(--muted);font-weight:400;font-size:13px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center}
+.kpis b{display:block;font-size:24px;font-variant-numeric:tabular-nums}
+.kpis span{font-size:11px;color:var(--muted)}
+.bars{display:flex;align-items:flex-end;gap:4px;height:90px;border-bottom:1px solid var(--line-strong);padding-top:14px}
+.bars div{flex:1;background:var(--tc);border-radius:2px 2px 0 0;position:relative;min-height:2px}
+.bars div span{position:absolute;top:-15px;left:0;right:0;text-align:center;font-size:10px;color:var(--muted)}
+.barlbl{display:flex;gap:4px}
+.barlbl span{flex:1;text-align:center;font-size:10px;color:var(--muted)}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.tbl th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;border-bottom:1px solid var(--line-strong);padding:6px 4px}
+.tbl td{border-bottom:1px solid var(--line);padding:8px 4px}
+.tblwrap{overflow-x:auto}
+.sugg{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.sugg .inp{width:110px;height:36px;text-transform:uppercase;font-weight:700}
+.sugg small{color:var(--muted);flex:1 1 100px}
+.row2{display:flex;gap:8px}
+.row2 .inp{flex:1}
 </style>
 </head>
 <body>
 <div id="app">
   <header>
     <div class="hbtns">
+      <button class="icon-btn" id="menuBtn" aria-label="Menu"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></button>
       <button class="icon-btn" id="helpBtn" aria-label="Como jogar"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg></button>
     </div>
-    <h1>Palavrle</h1>
+    <h1 id="homeTitle">Palavrle</h1>
     <div class="hbtns right">
       <button class="icon-btn" id="rankBtn" aria-label="Rankings"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0 0 11 15.9V19H7v2h10v-2h-4v-3.1a5.01 5.01 0 0 0 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm7 6c-1.65 0-3-1.35-3-3V5h6v6c0 1.65-1.35 3-3 3zm7-6c0 1.3-.84 2.4-2 2.82V7h2v1z"/></svg></button>
       <button class="icon-btn" id="profBtn" aria-label="O meu perfil"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 6a2 2 0 1 1 0 4 2 2 0 0 1 0-4m0 9c2.7 0 5.8 1.29 6 2v1H6v-.99c.2-.72 3.3-2.01 6-2.01m0-11a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 9c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4z"/></svg></button>
     </div>
   </header>
-  <nav id="picker" aria-label="Jogos de hoje"></nav>
-  <div id="boardWrap"><div id="board" role="grid" aria-label="Tabuleiro"></div></div>
+  <div id="bar"></div>
+  <div id="boardWrap"><div id="boards" aria-label="Tabuleiro"></div></div>
   <div id="keyboard" aria-label="Teclado"></div>
 </div>
 
-<div id="gate">
-  <div class="gate-in" id="gateIn"><p class="loading">A carregar…</p></div>
-</div>
+<div id="menu" hidden><nav class="panel" id="menuPanel" aria-label="Menu"></nav></div>
+<div id="gate"><div class="gate-in" id="gateIn"><p class="loading">A carregar…</p></div></div>
 <div id="toasts" aria-live="polite"></div>
-<div class="overlay" id="helpModal" hidden></div>
-<div class="overlay" id="statsModal" hidden></div>
-<div class="overlay" id="rankModal" hidden></div>
+<div class="overlay" id="modal" hidden></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 const SUPABASE_URL = "https://kdyyulklbzzkkervguju.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkeXl1bGtsYnp6a2tlcnZndWp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4MDQ3NDAsImV4cCI6MjEwOTM4MDc0MH0.w3uIli0x1DfnrgVABVivlSRPOJBmjvi61y571JQPoAQ";
 const DICTW = {"plain":"ABADE ABAFA ABAFE ABAFO ABALA ABALE ABALO ABANA ABANE ABANO ABATA ABATE ABATI ABATO ABDUZ ABETO ABOBA ABOBE ABOBO ABOLE ABOLI ABONA ABONE ABONO ABRAM ABRAS ABREM ABRES ABRIA ABRIL ABRIR ABRIS ABRIU ABULA ABULO ABUSA ABUSE ABUSO ACABA ACABE ACABO ACAMA ACAME ACAMO ACASO ACATA ACATE ACATO ACEDA ACEDE ACEDI ACEDO ACENA ACENE ACENO ACESA ACESO ACHAI ACHAM ACHAR ACHAS ACHEI ACHEM ACHES ACHOU ACIDE ACIMA ACNES ACODE ACRES ACUDA ACUDI ACUDO ACUME ACURA ACURE ACURO ACUSA ACUSE ACUSO ADAGA ADAIS ADEGA ADEGO ADEJA ADEJE ADEJO ADERE ADERI ADEUS ADIAI ADIAM ADIAR ADIAS ADIDA ADIDO ADIEI ADIEM ADIES ADIOU ADIRA ADIRO ADITA ADITE ADITO ADOBE ADOCE ADORA ADORE ADORO ADOTA ADOTE ADOTO ADROS ADUBA ADUBE ADUBO ADUFE ADULA ADULE ADULO ADUZA ADUZI ADUZO ADVIM ADVIR AFAGA AFAGO AFAMA AFAME AFAMO AFANA AFANE AFANO AFERE AFERI AFETA AFETE AFETO AFIAI AFIAM AFIAR AFIAS AFIEI AFIEM AFIES AFIFA AFIFE AFIFO AFILA AFILE AFILO AFINA AFINE AFINO AFINS AFIOU AFIRA AFIRO AFIXA AFIXE AFIXO AFLUA AFLUI AFLUO AFOFA AFOFE AFOFO AFOGA AFOGO AFOLA AFOLE AFOLO AFONO AFORA AFORE AFORO AFTAS AFUMA AFUME AFUMO AGIAM AGIAS AGIDA AGIDO AGITA AGITE AGITO AGORA AGROR AGUAI AGUAM AGUAR AGUCE AGUDA AGUDO AGUEI AGUEM AGUES AGUOU AINDA AIPOS AJAIS AJUDA AJUDE AJUDO ALADA ALADO ALAGA ALAGO ALAIS ALAPA ALAPE ALAPO ALARA ALAVA ALBAS ALCEI ALCEM ALCES ALEGA ALEGO ALEIS ALGAS ALGOZ ALGUM ALHOS ALIAI ALIAM ALIAR ALIEI ALIEM ALIES ALIJA ALIJE ALIJO ALIOU ALISA ALISE ALISO ALMAS ALOCA ALOCO ALOJA ALOJE ALOJO ALTAR ALTAS ALTER ALTOS ALUAI ALUAM ALUAR ALUAS ALUDA ALUDE ALUDI ALUDO ALUEI ALUEM ALUES ALUGA ALUGO ALUIR ALUIS ALUIU ALUNA ALUNE ALUNO ALUOU ALVAS ALVOR ALVOS AMADA AMADO AMAIS AMARA AMARE AMARO AMAVA AMBAS AMBOS AMEAI AMEAR AMEBA AMEEI AMEIA AMEIE AMEIO AMEIS AMENA AMENO AMEOU AMIBA AMIDO AMIGA AMIGO AMIMA AMIME AMIMO AMOJA AMOJE AMOJO AMOLA AMOLE AMOLO AMORA AMOVA AMOVE AMOVI AMOVO AMPLA AMPLO AMUAI AMUAM AMUAR AMUAS AMUEI AMUEM AMUES AMUOS AMUOU AMURA AMURE AMURO ANAFA ANAFE ANAFO ANAIS ANATA ANATE ANATO ANCAS ANDAI ANDAM ANDAR ANDAS ANDEI ANDEM ANDES ANDOR ANDOU ANELA ANELE ANELO ANEXA ANEXE ANEXO ANGRA ANHOS ANILA ANILE ANILO ANIMA ANIME ANISA ANISE ANISO ANJOS ANOJA ANOJE ANOJO ANOSA ANOSO ANOTA ANOTE ANOTO ANSAS ANTAS ANTES ANTRO ANUAL ANUAM ANUAS ANUEM ANUIR ANUIS ANUIU ANULA ANULE ANULO ANZOL AONDE AORTA APAGA APAGO APARA APARE APARO APEAI APEAR APEEI APEGA APEGO APEIA APEIE APEIO APELA APELE APELO APEOU APIPA APIPE APIPO APITA APITE APITO APOIA APOIE APOIO APRAZ APROA APROE APROO APTAS APTOS APUPA APUPE APUPO APURA APURE APURO ARADA ARADE ARADO ARAIS ARAMA ARAME ARAMO ARARA ARAVA ARCAI ARCAM ARCAR ARCAS ARCAZ ARCOS ARCOU ARDAM ARDAS ARDEI ARDEM ARDER ARDES ARDEU ARDIA ARDIL ARDIS ARDOR AREAI AREAL AREAM AREAR AREEI AREEM AREES AREIA AREIS AREJA AREJE AREJO ARENA AREOU ARFAI ARFAM ARFAR ARFAS ARFEI ARFEM ARFES ARFOU ARGUA ARGUI ARGUO ARMAI ARMAM ARMAR ARMAS ARMEI ARMEM ARMES ARMOU AROMA AROME AROMO ARPAI ARPAM ARPAR ARPAS ARPEI ARPEM ARPES ARPOA ARPOE ARPOO ARPOU ARQUE ARRIA ARRIE ARRIO ARROZ ARRUA ARRUE ARRUO ARTES ASADA ASADO ASAIS ASARA ASAVA ASCOS ASEIS ASILA ASILE ASILO ASNAL ASNAS ASNOS ASPAS ASSAI ASSAM ASSAR ASSAS ASSAZ ASSEI ASSEM ASSES ASSIM ASSOA ASSOE ASSOO ASSOU ASTRO ATACA ATACO ATADA ATADO ATAIS ATARA ATAVA ATEAI ATEAR ATEEI ATEIA ATEIE ATEIO ATEIS ATEOU ATERA ATEUS ATEVE ATIAM ATIAS ATICE ATIDA ATIDO ATINA ATINE ATINO ATIRA ATIRE ATIRO ATIVA ATIVE ATIVO ATLAS ATOLA ATOLE ATOLO ATONA ATONE ATONO ATRAI ATRIZ ATROA ATROE ATROO ATROZ ATUAI ATUAL ATUAM ATUAR ATUAS ATUEI ATUEM ATUES ATUNS ATUOU ATURA ATURE ATURO AUDAZ AUGIA AUGIR AUGIU AULAS AUNAI AURAS AUTOR AUTOS AUTUA AUTUE AUTUO AVARA AVARO AVEIA AVEIO AVIAI AVIAM AVIAR AVIAS AVIEI AVIEM AVIER AVIES AVIOU AVISA AVISE AVISO AVIVA AVIVE AVIVO AXIAL AXILA AZARA AZARE AZARO AZEDA AZEDE AZEDO AZOTA AZOTE AZOTO AZUIS AZULA AZULE AZULO BABAI BABAM BABAR BABAS BABEI BABEL BABEM BABES BABOU BACIA BACIO BAETA BAFAI BAFAM BAFAR BAFAS BAFEI BAFEM BAFES BAFIO BAFOS BAFOU BAGAI BAGAM BAGAR BAGAS BAGOS BAGOU BAGUE BAILA BAILE BAILO BAIXA BAIXE BAIXO BALAS BALDA BALDE BALDO BALIA BALIR BALIU BALSA BAMBA BAMBO BAMBU BANAL BANAM BANAS BANCA BANCO BANDA BANDO BANEM BANES BANHA BANHE BANHO BANIA BANIR BANIS BANIU BANJO BANTO BANZA BANZO BAQUE BARBA BARBE BARBO BARCA BARCO BARDO BARES BARRA BARRE BARRO BASAL BASCA BASCO BASES BASTA BASTE BASTO BATAM BATAS BATEI BATEL BATEM BATER BATES BATEU BATIA BATOM BAZAR BEATA BEATO BEBAM BEBAS BEBEI BEBEM BEBER BEBES BEBEU BEBIA BECOS BEIJA BEIJE BEIJO BEIRA BEIRE BEIRO BELAS BELFO BELGA BELOS BEMOL BENTA BENTO BENZA BENZE BENZI BENZO BERMA BERRA BERRE BERRO BESTA BICAI BICAL BICAM BICAR BICAS BICHA BICHE BICHO BICOS BICOU BIELA BIFES BIGLE BILHA BILRO BIMBA BINGO BIQUE BIRRA BIRRE BIRRO BISAI BISAM BISAR BISAS BISCA BISCO BISEI BISEM BISES BISOU BISPO BLOCO BLUSA BOATA BOATE BOATO BOBAS BOBOS BOCAL BOCAS BOCHE BODAS BODES BOFES BOGAS BOIAI BOIAM BOIAR BOIAS BOIEI BOIEM BOIES BOINA BOIOU BOJAI BOJAM BOJAR BOJAS BOJEI BOJEM BOJES BOJOU BOLAI BOLAM BOLAR BOLAS BOLBO BOLEI BOLEM BOLES BOLHA BOLHE BOLHO BOLOR BOLOS BOLOU BOLSA BOLSE BOLSO BOMBA BOMBO BONDE BORDA BORDE BORDO BORLA BOROA BORRA BORRE BORRO BOSSA BOSTA BOSTE BOSTO BOTAI BOTAM BOTAR BOTAS BOTEI BOTEM BOTES BOTIM BOTOU BOUCE BRADA BRADE BRADO BRAMA BRAME BRAMI BRAMO BRASA BRAVA BRAVO BREAI BREAR BRECA BRECO BREEI BREIA BREIE BREIO BREJO BREOU BREVE BRIGA BRIGO BRIOL BRIOS BRISA BRITA BRITE BRITO BROAS BROCA BROCO BROMA BROME BROMO BROTA BROTE BROTO BRUMA BRUNA BRUNE BRUNI BRUNO BRUTA BRUTO BRUXA BRUXE BRUXO BUCAL BUCHA BUCHO BUFAI BUFAM BUFAR BUFAS BUFEI BUFEM BUFES BUFOS BUFOU BUGIA BUGIE BUGIO BULAI BULAM BULAR BULAS BULBO BULEI BULEM BULES BULHA BULHE BULHO BULIA BULIR BULIS BULIU BULOU BUMBA BUREL BURGO BURIL BURLA BURLE BURLO BURRA BURRO BUSCA BUSCO BUSTO BUXOS CABAL CABAZ CABEI CABEM CABER CABES CABIA CABOS CABRA CACAU CACEI CACEM CACES CACHO CACOS CAGAI CAGAM CAGAR CAGAS CAGOU CAGUE CAIAI CAIAM CAIAR CAIAS CAIBA CAIBO CAIEI CAIEM CAIES CAIOU CAIXA CAJUS CALAI CALAM CALAR CALAS CALCE CALDA CALDE CALDO CALEI CALEM CALES CALFE CALHA CALHE CALHO CALMA CALME CALMO CALOR CALOS CALOU CALVA CALVE CALVO CAMAS CAMPA CAMPO CANAL CANAS CANIL CANIS CANJA CANOA CANOS CANSA CANSE CANSO CANTA CANTE CANTO CAPAI CAPAM CAPAR CAPAS CAPAZ CAPEI CAPEM CAPES CAPIM CAPOU CAPTA CAPTE CAPTO CAPUZ CAQUI CARAS CARDA CARDE CARDO CARGA CARGO CARIA CARIL CARIO CARIZ CARNE CAROS CARPA CARPE CARPI CARPO CARRO CARTA CARTE CASAI CASAL CASAM CASAR CASAS CASCA CASCO CASEI CASEM CASES CASOS CASOU CASPA CASTA CASTO CATAI CATAM CATAR CATAS CATEI CATEM CATES CATOS CATOU CATRE CAUDA CAULE CAUSA CAUSE CAUSO CAUTO CAVAI CAVAM CAVAR CAVAS CAVEI CAVEM CAVES CAVOS CAVOU CEADA CEADO CEAIS CEATA CEAVA CECAL CEDAM CEDAS CEDEI CEDEM CEDER CEDES CEDEU CEDIA CEDRO CEEIS CEGAI CEGAM CEGAR CEGAS CEGOS CEGOU CEGUE CEIAM CEIAS CEIEM CEIES CEIFA CEIFE CEIFO CEITA CELAS CELHA CELTA CENAS CENSO CENTO CEPAS CEPOS CERAS CERCA CERCO CERDA CERNA CERNE CERNI CERNO CERRA CERRE CERRO CERTA CERTO CERVO CERZI CESSA CESSE CESSO CESTA CESTO CETIM CETRA CETRO CHAGA CHAGO CHAMA CHAME CHAMO CHAPA CHAPE CHAPO CHATA CHATO CHAVE CHAVO CHECA CHECO CHEFE CHEGA CHEGO CHEIA CHEIO CHETA CHIAI CHIAM CHIAR CHIAS CHIBO CHIEI CHIEM CHIES CHILA CHINA CHINO CHIOU CHIPS CHITA CHOCA CHOCO CHORA CHORE CHORO CHOVA CHOVE CHOVI CHOVO CHULA CHULO CHUPA CHUPE CHUPO CHUTA CHUTE CHUTO CHUVA CIANO CICLO CIDRA CIFRA CIFRE CIFRO CIMAS CIMOS CINCO CINDA CINDE CINDI CINDO CINGE CINGI CINJA CINJO CINTA CINTE CINTO CINZA CINZE CINZO CIOSA CIOSO CIRCO CIRZA CIRZE CIRZO CISAI CISAM CISAR CISAS CISCO CISEI CISEM CISES CISMA CISME CISMO CISNE CISOU CITAI CITAM CITAR CITAS CITEI CITEM CITES CITOU CITRO CIUMA CIUMO CIVIL CIVIS CLAMA CLAME CLAMO CLARA CLARO CLAVA CLAVE CLERO CLICA CLICO CLIMA CLIVA CLIVE CLIVO CLONA CLONE CLONO CLORO CLUBE COADA COADO COAGE COAGI COAIS COAJA COAJO COARA COAVA COAXA COAXE COAXO COBRA COBRE COBRI COBRO COCAI COCAS COCEI COCEM COCES COCHA COCHE COCHO COCOS COEIS COERE COERI COESA COESO COFIA COFIE COFIO COFRE COIBI COICE COIFA COIMA COIRA COIRO COISA COISO COITA COITE COITO COLAI COLAM COLAR COLAS COLEI COLEM COLES COLHA COLHE COLHI COLHO COLMA COLME COLMO COLOS COLOU COMAM COMAS COMEI COMEM COMER COMES COMEU COMIA COMUM CONDE CONES CONGA CONTA CONTE CONTO COPAS COPIE COPIO COPOS COPRA COPTA COQUE CORAI CORAL CORAM CORAR CORAS CORDA COREI COREM CORES CORJA CORNO COROA COROE COROO COROS COROU CORPO CORRA CORRE CORRI CORRO CORSA CORSO CORTA CORTE CORTO CORVO COSAM COSAS COSEI COSEM COSER COSES COSEU COSIA COSPE COSTA COTAI COTAM COTAR COTAS COTEI COTEM COTES COTOS COTOU COUBE COURA COURO COUSA COUTA COUTE COUTO COUVE COVAL COVAS COVIL COVIS COXAL COXAS COXIA COXOS COZAM COZAS COZEI COZEM COZER COZES COZEU COZIA CRASE CRAVA CRAVE CRAVO CREDE CREDO CREEM CREIA CREIO CREMA CREME CREMO CREPE CRIAI CRIAM CRIAR CRIAS CRIDA CRIDO CRIEI CRIEM CRIES CRIME CRINA CRIOU CRISE CRIVA CRIVE CRIVO CROMA CROME CROMO CRUAS CRUDE CRUEL CRUZA CRUZE CRUZO CUBAI CUBAM CUBAR CUBAS CUBEI CUBEM CUBES CUBOS CUBOU CUBRA CUBRO CUCOS CUECA CUIDA CUIDE CUIDO CUJAS CUJOS CULPA CULPE CULPO CULTA CULTO CUMES CUNHA CUNHE CUNHO CURAI CURAM CURAR CURAS CURDA CURDO CUREI CUREM CURES CURIE CUROU CURRO CURSA CURSE CURSO CURTA CURTE CURTI CURTO CURVA CURVE CURVO CUSPA CUSPE CUSPI CUSPO CUSTA CUSTE CUSTO DADAS DADOR DADOS DALGO DAMAS DAMOS DANAI DANAM DANAR DANAS DANCE DANDO DANEI DANEM DANES DANOS DANOU DAQUI DARDO DAREI DAREM DARES DARIA DATAI DATAL DATAM DATAR DATAS DATEI DATEM DATES DATOU DAVAM DAVAS DECAI DECIL DEDAL DEDOS DEDUZ DEITA DEITE DEITO DEIXA DEIXE DEIXO DELAS DELEM DELES DELIS DELTA DEMOS DENSA DENSO DENTA DENTE DENTO DEPOR DEPUS DERAM DERAS DEREM DERES DERME DESCE DESCI DESDE DESPE DESPI DESSA DESSE DESTA DESTE DETER DEUSA DEVAM DEVAS DEVEI DEVEM DEVER DEVES DEVEU DEVIA DEVIM DEVIR DIABA DIABO DIANA DICAS DIETA DIGAM DIGAS DIGNA DIGNE DIGNO DILAM DILAS DILUA DILUI DILUO DINAR DIQUE DIREI DIRIA DISCA DISCO DISPA DISPO DISSE DISSO DISTA DISTE DISTO DITAI DITAM DITAR DITAS DITEI DITEM DITES DITOS DITOU DIVAS DIZEI DIZEM DIZER DIZES DIZIA DOADA DOADO DOAIS DOAVA DOBAI DOBAM DOBAR DOBAS DOBEI DOBEM DOBES DOBOU DOBRA DOBRE DOBRO DOCAS DOCES DOEIS DOGMA DOIDA DOIDO DOIRA DOIRE DOIRO DOMAI DOMAM DOMAR DOMAS DOMEI DOMEM DOMES DOMOU DONAS DONDE DONOS DOPAI DOPAM DOPAR DOPAS DOPEI DOPEM DOPES DOPOU DORES DORME DORMI DORSO DOSAI DOSAM DOSAR DOSAS DOSEI DOSEM DOSES DOSOU DOTAI DOTAM DOTAR DOTAS DOTEI DOTEM DOTES DOTOU DOURA DOURE DOURO DOUTA DOUTO DRAGA DRAGO DRAMA DRENA DRENE DRENO DRIVE DROGA DRUSA DRUSO DUAIS DUCAL DUCHE DUELO DUETO DUMAS DUNAS DUPLA DUPLO DUQUE DURAI DURAM DURAR DURAS DUREI DUREM DURES DURMA DURMO DUROS DUROU ECOAI ECOAM ECOAR ECOAS ECOEI ECOEM ECOES ECOOU EDEMA EDITA EDITE EDUCA EDUCO EFLUA EFLUI EFLUO EFUSO EIRAS EIXOS EJETA EJETE EJETO ELEGE ELEGI ELEJA ELEJO ELEVA ELEVE ELEVO ELIDA ELIDE ELIDI ELIDO ELITE ELMOS ELUDA ELUDE ELUDI ELUDO EMAIL EMANA EMANE EMANO EMITA EMITE EMITI EMITO EMPOA EMPOE EMPOO EMULA EMULE EMULO ENCHA ENCHE ENCHI ENCHO ENFIA ENFIE ENFIM ENFIO ENJOA ENJOE ENJOO ENOJA ENOJE ENOJO ENTES ENTOA ENTOE ENTOO ENTRA ENTRE ENTRO ENVIA ENVIE ENVIO ERETA ERETO ERGAM ERGAS ERGUE ERGUI ERICE ERIGE ERIGI ERIJA ERIJO ERMOS ERRAI ERRAM ERRAR ERRAS ERREI ERREM ERRES ERROS ERROU ERVAS ESCOA ESCOE ESCOO ESMOS ESPIA ESPIE ESPIO ESQUI ESSAS ESSES ESTAI ESTAR ESTES ESTIO ESTOU ESVAI ETANO ETAPA ETNIA EUROS EVADA EVADE EVADI EVADO EVITA EVITE EVITO EVOCA EVOCO EXALA EXALE EXALO EXAME EXARA EXARE EXARO EXATA EXATO EXIBA EXIBE EXIBI EXIBO EXIGE EXIGI EXIJA EXIJO EXILA EXILE EXILO EXIMA EXIME EXIMI EXIMO EXPIA EXPIE EXPIO EXPOR EXPUS EXTRA EXULA EXULE EXULO EXUMA EXUME EXUMO FACES FACHO FACTO FADAI FADAM FADAR FADAS FADEI FADEM FADES FADOS FADOU FAIAS FAINA FAIXA FAIXE FAIXO FALAI FALAM FALAR FALAS FALEI FALEM FALES FALHA FALHE FALHO FALIA FALIR FALIS FALIU FALOS FALOU FALSA FALSO FALTA FALTE FALTO FALUA FAMAS FANAI FANAM FANAR FANAS FANEI FANEM FANES FANFA FANFE FANFO FANOU FARAD FARDA FARDE FARDO FAREI FARIA FAROL FAROS FARPA FARPE FARPO FARRA FARSA FARTA FARTE FARTO FASEA FASEE FASEO FASES FASTO FATAL FATIA FATIE FATIO FATOR FATOS FAUNA FAUNO FAVAL FAVAS FAVOR FAVOS FAXES FAZEI FAZEM FAZER FAZES FAZIA FEBRA FEBRE FECAL FECHA FECHE FECHO FEDAM FEDAS FEDEI FEDEM FEDER FEDES FEDEU FEDIA FEDOR FEIAS FEIOS FEIRA FEIRE FEIRO FEITA FEITO FEIXE FELIZ FENDA FENDE FENDI FENDO FENOL FENOS FERAS FEREM FERES FERIA FERIE FERIO FERIR FERIS FERIU FERMI FEROZ FERRA FERRE FERRO FERVA FERVE FERVI FERVO FESTA FETAL FETOS FEUDO FEVRA FEZES FIADA FIADO FIAIS FIAPO FIARA FIAVA FIBRA FICAI FICAM FICAR FICAS FICHA FICHE FICHO FICOU FIGAS FIGOS FILAI FILAM FILAR FILAS FILEI FILEM FILES FILHA FILHO FILIA FILIE FILIO FILMA FILME FILMO FILOS FILOU FINAI FINAL FINAM FINAR FINAS FINCA FINCO FINDA FINDE FINDO FINEI FINEM FINES FINGE FINGI FINJA FINJO FINOS FINOU FINTA FINTE FINTO FIQUE FIRAM FIRAS FIRMA FIRME FIRMO FISCO FISGA FISGO FITAI FITAM FITAR FITAS FITEI FITEM FITES FITOU FIXAI FIXAM FIXAR FIXAS FIXEI FIXEM FIXES FIXOS FIXOU FIZER FLASH FLAVA FLETE FLETI FLITA FLITO FLOCO FLORA FLORE FLORI FLORO FLUAM FLUAS FLUEM FLUIR FLUIS FLUIU FLUXO FOBIA FOCAI FOCAL FOCAM FOCAR FOCAS FOCOS FOCOU FOFAS FOFOS FOGEM FOGES FOGOS FOICE FOLAR FOLES FOLGA FOLGO FOLHA FOLHE FOLHO FOLIA FOLIE FOMES FOMOS FONIA FONTE FOQUE FORAL FORAM FORAS FORCE FOREM FORES FORJA FORJE FORJO FORMA FORME FORMO FORNO FOROS FORRA FORRE FORRO FORTE FOSCA FOSCO FOSSA FOSSE FOSSO FOSTE FOTOS FOUCE FRACA FRACO FRADE FRAGA FRASE FREIO FREIS FREME FREMI FRENA FRENE FRENO FRESA FRESE FRESO FRETA FRETE FRETO FRIAS FRIMA FRIMO FRIOS FRISA FRISE FRISO FRITA FRITE FRITO FROTA FRUAM FRUAS FRUEM FRUIR FRUIS FRUIU FRUTA FRUTO FUGAS FUGAZ FUGIA FUGIR FUGIS FUGIU FUJAM FUJAS FULAS FULOS FUMAI FUMAM FUMAR FUMAS FUMEI FUMEM FUMES FUMOS FUMOU FUNDA FUNDE FUNDI FUNDO FUNGA FUNGO FUNIL FUNIS FURAI FURAM FURAR FURAS FUREI FUREM FURES FURNA FUROR FUROS FUROU FURTA FURTE FURTO FUSAS FUSCA FUSCO FUSOS FUZIL FUZIS GABAI GABAM GABAR GABAS GABEI GABEM GABES GABOU GADOS GAGAS GAGOS GAITA GAJAS GAJOS GALAI GALAM GALAR GALAS GALEI GALEM GALGA GALGO GALHA GALHO GALOS GALOU GAMAI GAMAM GAMAR GAMAS GAMBA GAMEI GAMEM GAMES GAMOS GAMOU GANAM GANAS GANEM GANES GANGA GANHA GANHE GANHO GANIA GANIR GANIS GANIU GANSO GARBO GARES GARFA GARFE GARFO GARRA GARRE GARRI GARRO GASES GASTA GASTE GASTO GATAS GATOS GAUSS GAZES GAZUA GEADA GEADO GEAIS GEARA GEAVA GECOS GEEIS GEIAM GEIAS GEIEM GEIES GELAI GELAM GELAR GELAS GELEI GELEM GELES GELOS GELOU GEMAI GEMAM GEMAR GEMAS GEMEI GEMEM GEMER GEMES GEMEU GEMIA GEMOU GENES GENRO GENTE GERAI GERAL GERAM GERAR GERAS GEREI GEREM GERES GERIA GERIR GERIS GERIU GERME GEROU GESSA GESSE GESSO GESTA GESTO GIGAS GINGA GINGO GINJA GIRAI GIRAM GIRAR GIRAS GIREI GIREM GIRES GIROS GIROU GIZAI GIZAM GIZAR GIZAS GIZEI GIZEM GIZES GIZOU GLEBA GLIFO GLOBO GLOSA GLOTE GNOMA GNOMO GNOSE GODAS GODOS GOELA GOELE GOELO GOESA GOLAS GOLES GOLFA GOLFE GOLFO GOLOS GOLPE GOMAS GOMOS GONGO GONZO GORAI GORAM GORAR GORAS GORDA GORDO GOREI GOREM GORES GOROU GORRA GORRO GOSTA GOSTE GOSTO GOTAS GOZAI GOZAM GOZAR GOZAS GOZEI GOZEM GOZES GOZOS GOZOU GRAAL GRADA GRADE GRADO GRAFA GRAFE GRAFO GRAMA GRAME GRAMO GRANA GRANE GRANO GRATA GRATO GRAUS GRAVA GRAVE GRAVO GRAXA GREGA GREGO GRELA GRELE GRELO GRETA GRETE GRETO GREVE GRIFO GRILO GRIPA GRIPE GRIPO GRISA GRISE GRISO GRITA GRITE GRITO GROSA GROUS GRUAS GRUDA GRUDE GRUDO GRUPO GRUTA GUAPO GUARA GUARE GUARI GUARO GUETO GUIAI GUIAM GUIAR GUIAS GUIEI GUIEM GUIES GUINA GUINE GUINO GUIOU GUISA GUISE GUISO GUITA GUIZO GULAS GUMES GURUS HAJAM HAJAS HARPA HARPE HARPO HASTA HASTE HAVEI HAVER HAVIA HEMOS HERAS HERDA HERDE HERDO HERTZ HIATO HIDRA HIENA HINDI HINDU HINOS HIRTA HIRTO HOMEM HONOR HONRA HONRE HONRO HORAS HORDA HORTA HORTO HOSTE HOTEL HOUVE HULHA HUMOR HUNAS HUNOS HURRA IAMBO IATES IBERA IBERO ICEIS IDADE IDEAL IDEIA IDOSA IDOSO IENES IGLUS IGUAL ILESA ILESO ILHAI ILHAL ILHAM ILHAR ILHAS ILHEI ILHEM ILHES ILHOU ILIBA ILIBE ILIBO ILUDA ILUDE ILUDI ILUDO IMAGO IMAME IMANE IMBUA IMBUI IMBUO IMITA IMITE IMITO IMOLA IMOLE IMOLO IMPOR IMPUS IMUNE IMUTA IMUTE IMUTO INALA INALE INALO INATA INATO INCAS INCHA INCHE INCHO INCRA INCRE INCRI INCRO INDUZ INGRE INIBA INIBE INIBI INIBO INOVA INOVE INOVO INPUT INSTA INSTE INSTO INTRA INTUA INTUO IODAI IODAM IODAR IODAS IODEI IODEM IODES IODOU IRADA IRADO IRAIS IRARA IRAVA IRDES IREIS IRIAM IRIAS IRISA IRISE IRISO IRMOS IROSO ISCAI ISCAM ISCAR ISCAS ISCOS ISCOU ISOLA ISOLE ISOLO ISQUE ISTMO ITENS ITERA ITERE ITERO JADES JANTA JANTE JANTO JARDA JARRA JARRO JATOS JAULA JAZAM JAZAS JAZEI JAZEM JAZER JAZES JAZEU JAZIA JEANS JECOS JEITO JEJUA JEJUE JEJUM JEJUO JESUS JIPES JOGAI JOGAM JOGAR JOGAS JOGOS JOGOU JOGUE JOIAS JORRA JORRE JORRO JOULE JOVEM JUBAS JUDAS JUDEU JUDIA JUDIE JUDIO JUGOS JULGA JULGO JULHO JUNCA JUNCO JUNHO JUNTA JUNTE JUNTO JURAI JURAM JURAR JURAS JUREI JUREM JURES JUROS JUROU JUSTA JUSTO LABOR LACAI LACAM LACAS LACEI LACEM LACES LACRA LACRE LACRO LACTA LACTE LACTO LADOS LADRA LADRE LADRO LAGAR LAGOA LAGOS LAIAS LAICA LAICO LAIVO LAJES LAMAS LAMBA LAMBE LAMBI LAMBO LANAR LANCE LANHA LANHE LANHO LAPAS LAPSO LAQUE LARES LARGA LARGO LARVA LASCA LASCO LASER LASSA LASSE LASSO LATAM LATAS LATEM LATES LATIA LATIM LATIR LATIS LATIU LAUTA LAUTO LAVAI LAVAM LAVAR LAVAS LAVEI LAVEM LAVES LAVOR LAVOU LAVRA LAVRE LAVRO LAZER LEAIS LEBRE LEDES LEDOR LEGAI LEGAL LEGAM LEGAR LEGAS LEGOU LEGUE LEIAM LEIAS LEIGA LEIGO LEIRA LEITE LEITO LEIVA LEMAS LEMES LEMOS LENDA LENDO LENHA LENHE LENHO LENTA LENTE LENTO LEOAS LEPRA LEQUE LERAM LEREI LEREM LERES LERIA LESAI LESAM LESAR LESAS LESEI LESEM LESES LESMA LESME LESMO LESOU LESSE LESTA LESTE LESTO LETAL LETRA LEVAI LEVAM LEVAR LEVAS LEVEI LEVEM LEVES LEVOU LIBRA LICEU LICOR LIDAI LIDAM LIDAR LIDAS LIDEI LIDEM LIDES LIDOS LIDOU LIGAI LIGAM LIGAR LIGAS LIGOU LIGUE LIMAI LIMAM LIMAR LIMAS LIMBO LIMEI LIMEM LIMES LIMOU LIMPA LIMPE LIMPO LINCE LINDA LINDO LINFA LINHA LINHO LIRAS LISAS LISOS LISTA LISTE LISTO LITRO LIVRA LIVRE LIVRO LIXAI LIXAM LIXAR LIXAS LIXEI LIXEM LIXES LIXOS LIXOU LOBAL LOBAS LOBOS LOCAI LOCAL LOCAM LOCAR LOCAS LOCOU LODOS LOGOS LOGRA LOGRE LOGRO LOIRA LOIRE LOIRO LOISA LOJAS LOMBA LOMBO LONAS LONGA LONGE LONGO LOQUE LORDE LORPA LOTAI LOTAM LOTAR LOTAS LOTEI LOTEM LOTES LOTOS LOTOU LOUCO LOURA LOURE LOURO LOUSA LOUVA LOUVE LOUVO LUCRA LUCRE LUCRO LUFAI LUFAM LUFAR LUFAS LUFEI LUFEM LUFES LUFOU LUGAR LULAS LUMES LUNAR LUPAS LURAS LUSAS LUSCO LUSOS LUTAI LUTAM LUTAR LUTAS LUTEI LUTEM LUTES LUTOS LUTOU LUVAS LUXAI LUXAM LUXAR LUXAS LUXEI LUXEM LUXES LUXOS LUXOU LUZAM LUZAS LUZEM LUZES LUZIA LUZIR LUZIS LUZIU MACAS MACEI MACEM MACES MACHA MACHO MACIA MACIO MACRO MADRE MAGAS MAGIA MAGMA MAGNA MAGNO MAGOE MAGOO MAGOS MAGRA MAGRO MAIAS MAIOR MAJOR MALAR MALAS MALES MALGA MALHA MALHE MALHO MALTA MALTE MAMAI MAMAL MAMAM MAMAR MAMAS MAMBO MAMEI MAMEM MAMES MAMOU MANAI MANAM MANAR MANAS MANCA MANCO MANDA MANDE MANDO MANEI MANEM MANES MANGA MANGO MANIA MANJA MANJE MANJO MANOS MANOU MANSA MANSO MANTA MANTO MAPAS MARCA MARES MARGA MARRA MARRE MARRO MARTA MASCA MASCO MASER MASSA MATAI MATAM MATAR MATAS MATEI MATEM MATES MATIZ MATOS MATOU MEADA MEADO MEATO MECHA MEDAS MEDEM MEDES MEDIR MEDIS MEDIU MEDOS MEDRA MEDRE MEDRO MEIAS MEIGA MEIGO MEIOS MELAI MELAM MELAR MELAS MELEI MELEM MELES MELGA MELOA MELOU MELRA MELRO MENIR MENOR MENOS MENTA MENTE MENTI MENUS MERAS MERDA MEROS MESAS MESES MESMA MESMO MESSE METAL METAM METAS METEI METEM METER METES METEU METIA METRO MEXAM MEXAS MEXEI MEXEM MEXER MEXES MEXEU MEXIA MIADA MIADO MIAIS MIAVA MICRA MICRO MIEIS MIGAI MIGAM MIGAR MIGAS MIGOU MIGRA MIGRE MIGRO MIGUE MIJAI MIJAM MIJAR MIJAS MIJEI MIJEM MIJES MIJOS MIJOU MILHA MILHO MIMAI MIMAM MIMAR MIMAS MIMEI MIMEM MIMES MIMOS MIMOU MINAI MINAM MINAR MINAS MINEI MINEM MINES MINGA MINGO MINHA MINOU MINTA MINTO MIOLO MIRAI MIRAM MIRAR MIRAS MIREI MIREM MIRES MIROU MIRRA MIRRE MIRRO MISSA MISSE MISSO MISTA MISTO MITOS MITRA MITRE MITRO MOAIS MOCHO MODAL MODAS MODEM MODOS MOEDA MOEIS MOELA MOERA MOFAI MOFAM MOFAR MOFAS MOFEI MOFEM MOFES MOFOU MOGNO MOINA MOINE MOINO MOIRA MOIRO MOITA MOLAR MOLAS MOLDA MOLDE MOLDO MOLES MOLHA MOLHE MOLHO MONAS MONCO MONDA MONDE MONDO MONGE MONJA MONTA MONTE MONTO MORAI MORAL MORAM MORAR MORAS MORDA MORDE MORDI MORDO MOREI MOREM MORES MORNA MORNO MOROU MORRA MORRE MORRI MORRO MORSA MORTA MORTE MORTO MOSCA MOSSA MOSSE MOSSO MOSTO MOTAS MOTEL MOTES MOTIM MOTOR MOTOS MOUCA MOUCO MOURA MOURO MOVAM MOVAS MOVEI MOVEM MOVER MOVES MOVEU MOVIA MUDAI MUDAM MUDAR MUDAS MUDEI MUDEM MUDES MUDEZ MUDOS MUDOU MUGEM MUGES MUGIA MUGIR MUGIS MUGIU MUITA MUITO MUJAM MUJAS MULAS MULTA MULTE MULTI MULTO MUNAM MUNAS MUNDO MUNEM MUNES MUNGE MUNGI MUNIA MUNIR MUNIS MUNIU MUNJA MUNJO MURAI MURAL MURAM MURAR MURAS MUREI MUREM MURES MUROS MUROU MURRO MUSAL MUSAS MUSEU MUSGO MUTUE NABAL NABOS NACOS NADAI NADAM NADAR NADAS NADEI NADEM NADES NADOU NAFTA NAIFA NAIPE NANAI NANAM NANAR NANAS NANEI NANEM NANES NANOU NARIZ NARRA NARRE NARRO NASAL NASCE NASCI NATAL NATAS NATOS NAVAL NAVES NAVIO NAZIS NEGAI NEGAM NEGAR NEGAS NEGOU NEGRA NEGRO NEGUE NELAS NELES NERVO NESGA NESSA NESSE NESTA NESTE NETAS NETOS NEURA NEURO NEVAR NEVEI NEVES NEVOU NEXOS NICAI NICAM NICAR NICAS NICHO NICOU NIMBO NINAI NINAM NINAR NINAS NINEI NINEM NINES NINFA NINHA NINHE NINHO NINOU NIQUE NISSO NISTO NITRA NITRE NITRO NOBRE NODAL NODOS NOEMA NOESE NOITE NOIVA NOIVE NOIVO NOMES NONAS NORAS NORMA NORTE NOSSA NOSSO NOTAI NOTAM NOTAR NOTAS NOTEI NOTEM NOTES NOTOU NOVAS NOVEL NOVOS NOZES NUBLA NUBLE NUBLO NUCAL NUDEZ NULAS NULOS NUMAS NUNCA NUTRA NUTRE NUTRI NUTRO NUVEM OBESA OBESO OBRAI OBRAM OBRAR OBRAS OBREI OBREM OBRES OBROU OBSTA OBSTE OBSTO OBTER OCASO OCUPA OCUPE OCUPO ODEIA ODEIE ODEIO ODIAI ODIAR ODIEI ODIOU ODORA ODORE ODORO ODRES OESTE OFEGA OFEGO OGIVA OGRES OIRAR OIROS OLEAI OLEAR OLEEI OLEIA OLEIE OLEIO OLEOU OLHAI OLHAL OLHAM OLHAR OLHAS OLHEI OLHEM OLHES OLHOS OLHOU OLIVA OLMOS OMBRO OMITA OMITE OMITI OMITO ONDAS ONERA ONERE ONERO ONTEM OPACA OPACO OPALA OPERE OPERO OPIAI OPIAM OPIAR OPIAS OPIEI OPIEM OPIES OPINA OPINE OPINO OPIOU OPTAI OPTAM OPTAR OPTAS OPTEI OPTEM OPTES OPTOU ORADA ORADO ORAIS ORAVA ORCAS ORCEI ORCEM ORCES ORDEM OREIS ORGIA ORLAI ORLAM ORLAR ORLAS ORLEI ORLEM ORLES ORLOU ORNAI ORNAM ORNAR ORNAS ORNEI ORNEM ORNES ORNOU OSGAS OSSOS OSTRA OUGAI OUGAM OUGAR OUGAS OUGOU OUGUE OURAI OURAM OURAR OURAS OUREI OUREM OURES OUROS OUROU OUSAI OUSAM OUSAR OUSAS OUSEI OUSEM OUSES OUSOU OUTRA OUTRO OUVEM OUVES OUVIA OUVIR OUVIS OUVIU OVADA OVADO OVAIS OVALA OVALE OVALO OVARA OVAVA OVEIS OVINO OXIDA OXIDE OZONA OZONE OZONO PACTO PADRE PAGAI PAGAM PAGAR PAGAS PAGOS PAGOU PAGUE PAIOL PAIOS PAIRA PAIRE PAIRO PAJEM PALAS PALCO PALHA PALIA PALIE PALIO PALMA PALME PALMO PALPA PALPE PALPO PALRA PALRE PALRO PANAI PANAL PANAM PANAR PANAS PANDA PANEI PANEM PANES PANOS PANOU PAPAI PAPAL PAPAM PAPAR PAPAS PAPEI PAPEL PAPEM PAPES PAPOU PARAI PARAM PARAR PARAS PARCA PARCO PARDA PARDO PAREI PAREM PARES PARIR PARIS PARIU PARLA PARLE PARLO PAROU PARRA PARTA PARTE PARTI PARTO PARVA PARVO PASMA PASME PASMO PASSA PASSE PASSO PASTA PASTE PASTO PATAS PATIM PATOS PAUIS PAUSA PAUSE PAUSO PAUTA PAUTE PAUTO PAVIO PAVOA PAVOR PAZES PECAI PECAR PECHA PECOU PEDAL PEDEM PEDES PEDIA PEDIR PEDIS PEDIU PEDRA PEGAI PEGAM PEGAR PEGAS PEGOU PEGUE PEITO PEIXE PEJAI PEJAM PEJAR PEJAS PEJEI PEJEM PEJES PEJOU PELAI PELAM PELAR PELAS PELEI PELEM PELES PELOS PELOU PELVE PENAI PENAL PENAM PENAR PENAS PENCA PENCE PENDA PENDE PENDI PENDO PENEI PENEM PENES PENHA PENOU PENSA PENSE PENSO PENTE PEQUE PERAL PERAS PERCA PERCO PERDA PERDE PERDI PERNA PERRA PERRO PERSA PERTO PERUA PERUS PESAI PESAM PESAR PESAS PESCA PESCO PESEI PESEM PESES PESOS PESOU PESTE PETIZ PEZES PIADA PIADO PIAIS PIANO PIARA PIAVA PICAI PICAM PICAR PICAS PICHE PICOS PICOU PIEIS PIELA PILAI PILAM PILAR PILAS PILEI PILEM PILES PILHA PILHE PILHO PILOU PIMBA PIMPA PIMPE PIMPO PINGA PINGO PINHA PINHO PINOS PINTA PINTE PINTO PIORA PIORE PIORO PIPAS PIQUE PIRAI PIRAM PIRAR PIRAS PIREI PIREM PIRES PIROU PISAI PISAM PISAR PISAS PISCA PISCO PISEI PISEM PISES PISGA PISGO PISOS PISOU PISTA PIXEL PIZAS PIZZA PLACA PLANA PLANE PLANO PLEBE PLENA PLENO PLEXO PLICA PLICO PLUMA PNEUS POBRE PODAI PODAL PODAM PODAR PODAS PODEI PODEM PODER PODES PODIA PODOU PODRE POEMA POETA POISA POISE POISO POJAI POJAM POJAR POJAS POJEI POJEM POJES POJOU POLAR POLCA POLCO POLIA POLIR POLIS POLIU POLOS POLPA POLUA POLUI POLUO POLVO POMAR POMBA POMBO POMES POMOS POMPA PONDE PONDO PONHA PONHO PONTA PONTE PONTO PORCA PORCO POREI PORES PORIA POROS PORRA PORRO PORTA PORTE PORTO POSAI POSAM POSAR POSAS POSEI POSEM POSES POSOU POSSA POSSE POSSO POSTA POSTE POSTO POTES POTRA POTRO POUCA POUCO POUPA POUPE POUPO POUSA POUSE POUSO POVOA POVOE POVOO POVOS PRADO PRAGA PRAIA PRATA PRATO PRAXE PRAZO PRECE PREDA PREDE PREDO PREGA PREGO PRELO PREMA PREME PREMI PREMO PRESA PRESE PRESO PRETA PRETO PREVI PREZA PREZE PREZO PRIMA PRIME PRIMO PRIOR PRIVA PRIVE PRIVO PROAS PROBO PROFS PROLE PROSA PROSE PROSO PROVA PROVE PROVI PROVO PRUMO PRURA PRURE PRURI PRURO PUDER PUDIM PUDOR PUGNA PUGNE PUGNO PUJAI PUJAM PUJAR PUJAS PUJEI PUJEM PUJES PUJOU PULAI PULAM PULAR PULAS PULEI PULEM PULES PULGA PULHA PULOS PULOU PULSA PULSE PULSO PUMAS PUMBA PUNAM PUNAS PUNEM PUNES PUNGE PUNGI PUNHA PUNHO PUNIA PUNIR PUNIS PUNIU PUNJA PUNJO PURAS PURGA PURGO PUROS PUSER PUTOS PUXAI PUXAM PUXAR PUXAS PUXEI PUXEM PUXES PUXOS PUXOU QUAIS QUASE QUEDA QUEDE QUEDO QUERO QUICO QUILO QUIMO QUINA QUINE QUINO QUITA QUITE QUITO QUIVI QUOTA RABOS RACHA RACHE RACHO RADAR RADIA RADIE RAFAI RAFAM RAFAR RAFAS RAFEI RAFEM RAFES RAFOU RAIAI RAIAM RAIAR RAIAS RAIEI RAIEM RAIES RAIOS RAIOU RAIVA RALAI RALAM RALAR RALAS RALEI RALEM RALES RALHA RALHE RALHO RALIS RALOS RALOU RAMAL RAMAS RAMOS RAMPA RANCE RANGE RANGI RANHO RANJA RANJO RAPAI RAPAM RAPAR RAPAS RAPAZ RAPEI RAPEM RAPES RAPOU RAPTA RAPTE RAPTO RARAS RAROS RASAI RASAM RASAR RASAS RASCA RASCO RASEI RASEM RASES RASGA RASGO RASOS RASOU RASPA RASPE RASPO RASTO RATAI RATAM RATAR RATAS RATEI RATEM RATES RATOS RATOU RAZIA RAZIE RAZIO RAZOA RAZOE RAZOO REAGE REAGI REAIS REAJA REAJO REATA REATE REATO REAVA REAVE REAVI REAVO RECAI RECUA RECUE RECUO REDES REDOR REDUZ REFAZ REFEZ REFIA REFIE REFIO REFIZ REGAI REGAM REGAR REGAS REGEI REGEM REGER REGES REGEU REGOS REGOU REGRA REGRE REGRO REGUE REIAM REIAS REINA REINE REINO REJAM REJAS RELAM RELAS RELEI RELEM RELER RELES RELEU RELIA RELUZ RELVA RELVE RELVO REMAI REMAM REMAR REMAS REMEI REMEM REMES REMIA REMIR REMIS REMIU REMOA REMOO REMOS REMOU RENAL RENAS RENDA RENDE RENDI RENDO RENHA RENHE RENHI RENHO RENTE REPAS REPOR REPTA REPTE REPTO REPUS RESMA RESTA RESTE RESTO RETAL RETAS RETER RETOS RETRO REUMA REUNI REUSA REUSE REUSO REVER REVIA REVIM REVIR REVIU REVOO REZAI REZAM REZAR REZAS REZEI REZEM REZES REZOU RIAIS RICAS RICOS RIDAS RIDES RIDOS RIFAI RIFAM RIFAR RIFAS RIFEI RIFEM RIFES RIFLE RIFOU RIGOR RIJAS RIJOS RILHA RILHE RILHO RIMAI RIMAM RIMAR RIMAS RIMEI RIMEM RIMES RIMOS RIMOU RINDO RIPAI RIPAM RIPAR RIPAS RIPEI RIPEM RIPES RIPOU RIRAM RIREI RIREM RIRES RIRIA RISCA RISCO RISOS RISSE RISTE RITMA RITME RITMO RITOS RIVAL RIXAI RIXAM RIXAR RIXAS RIXEI RIXEM RIXES RIXOU ROAIS ROBES ROCEI ROCEM ROCES ROCHA RODAI RODAM RODAR RODAS RODEI RODEM RODES RODOS RODOU ROEIS ROERA ROGAI ROGAM ROGAR ROGAS ROGOS ROGOU ROGUE ROLAI ROLAM ROLAR ROLAS ROLEI ROLEM ROLES ROLHA ROLHE ROLHO ROLOS ROLOU ROMBO ROMPA ROMPE ROMPI ROMPO RONCA RONCO RONDA RONDE RONDO ROQUE ROSAL ROSAS ROSCA ROSCO ROSNA ROSNE ROSNO ROSTO ROTAI ROTAM ROTAR ROTAS ROTEI ROTEM ROTES ROTOR ROTOS ROTOU ROUBA ROUBE ROUBO ROUCA ROUCO ROUPA ROXAS ROXOS RUAIS RUBIS RUBLO RUBOR RUBRA RUBRO RUDES RUDEZ RUELA RUFAI RUFAM RUFAR RUFAS RUFEI RUFEM RUFES RUFIA RUFIE RUFIO RUFOU RUGAS RUGEM RUGES RUGIA RUGIR RUGIS RUGIU RUINS RUIVA RUIVO RUJAM RUJAS RUMAI RUMAM RUMAR RUMAS RUMEI RUMEM RUMES RUMOR RUMOS RUMOU RUPIA RURAL RUSGA RUSGO RUSSA RUSSO SABEI SABEM SABER SABES SABIA SABOR SABRE SACAI SACAM SACAR SACAS SACHA SACHE SACHO SACIA SACIE SACIO SACOS SACOU SACRA SACRO SADIA SADIO SAFAI SAFAM SAFAR SAFAS SAFEI SAFEM SAFES SAFOS SAFOU SAFRA SAGAS SAGAZ SAGRA SAGRE SAGRO SAIAM SAIAS SAIBA SALAS SALDA SALDE SALDO SALGA SALGO SALMO SALSA SALTA SALTE SALTO SALVA SALVE SALVO SAMBA SAMBE SAMBO SANAI SANAM SANAR SANAS SANCA SANDE SANEI SANEM SANES SANHA SANOU SANTA SANTO SAPAL SAPOS SAQUE SARAI SARAM SARAR SARAS SARAU SARDA SAREI SAREM SARES SARJA SARJE SARJO SARNA SARNE SARNI SARNO SAROU SARRO SAUNA SEARA SEBES SEBOS SECAI SECAM SECAR SECAS SECOS SECOU SEDAI SEDAM SEDAR SEDAS SEDEI SEDEM SEDES SEDIA SEDIE SEDIO SEDOU SEDUZ SEGAI SEGAM SEGAR SEGAS SEGOU SEGUE SEGUI SEIOS SEITA SEIVA SEIXO SEJAM SEJAS SELAI SELAM SELAR SELAS SELEI SELEM SELES SELIM SELOS SELOU SELVA SENAS SENDA SENDO SENHA SENIL SENIS SENSO SENTA SENTE SENTI SENTO SEPTO SEQUE SEREI SEREM SERES SERIA SERPE SERRA SERRE SERRO SERVA SERVE SERVI SERVO SERZE SERZI SESTA SETAS SETOR SEXOS SEXTA SEXTO SHELL SIDAS SIDOS SIDRA SIGAM SIGAS SIGLA SIGMA SIGNO SIGUI SILOS SILVA SILVE SILVO SINAL SINAS SINOS SINTA SINTO SIQUE SIRGA SIRVA SIRVO SIRZA SIRZO SISAI SISAM SISAR SISAS SISEI SISEM SISES SISMO SISOU SITES SITIA SITIE SITOS SITUA SITUE SITUO SLIDE SOADA SOADO SOAIS SOAVA SOBEM SOBES SOBRA SOBRE SOBRO SOCAI SOCAM SOCAR SOCAS SOCOS SOCOU SOEIS SOFRA SOFRE SOFRI SOFRO SOGRA SOGRO SOLAR SOLAS SOLDA SOLDE SOLDO SOLHA SOLOS SOLTA SOLTE SOLTO SOLVA SOLVE SOLVI SOLVO SOMAI SOMAM SOMAR SOMAS SOMEI SOMEM SOMES SOMOS SOMOU SONAR SONDA SONDE SONDO SONHA SONHE SONHO SONOS SONSA SONSO SOPAS SOPRA SOPRE SOPRO SOQUE SORNA SORNE SORNO SOROS SORRI SORTE SORTI SORVA SORVE SORVI SORVO SOUBE SOUTO SOVAI SOVAM SOVAR SOVAS SOVEI SOVEM SOVES SOVOU STAFF STAND STOPS SUADA SUADO SUAIS SUARA SUAVA SUAVE SUBAM SUBAS SUBIA SUBIR SUBIS SUBIU SUCOS SUECA SUECO SUEIS SUEVA SUEVO SUGAI SUGAM SUGAR SUGAS SUGOU SUGUE SUITE SUJAI SUJAM SUJAR SUJAS SUJEI SUJEM SUJES SUJOS SUJOU SULCA SULCO SUMAM SUMAS SUMIA SUMIR SUMIS SUMIU SUMOS SUPER SUPOR SUPRA SUPRE SUPRI SUPRO SUPUS SURDA SURDE SURDI SURDO SURFE SURGE SURGI SURJA SURJO SURRA SURRE SURRO SURTA SURTE SURTI SURTO SUSHI SUSTA SUSTE SUSTO TABUS TACHA TACHE TACHO TACOS TAIPA TALAI TALAM TALAR TALAS TALCO TALEI TALEM TALES TALHA TALHE TALHO TALOS TALOU TAMPA TAMPE TAMPO TANAS TANGA TANGE TANGI TANGO TANJA TANJO TANSO TANTA TANTO TAPAI TAPAM TAPAR TAPAS TAPEI TAPEM TAPES TAPOU TARAI TARAM TARAR TARAS TARDA TARDE TARDO TAREI TAREM TARES TARJA TARJE TARJO TAROU TARSO TARTE TASCA TASCO TATUA TATUE TATUO TATUS TAXAI TAXAM TAXAR TAXAS TAXEI TAXEM TAXES TAXOU TECEI TECEM TECER TECES TECEU TECIA TECLA TECLE TECLO TEIAS TEIMA TEIME TEIMO TEIXO TELAS TELEX TELHA TELHE TELHO TEMAM TEMAS TEMEI TEMEM TEMER TEMES TEMEU TEMIA TEMOR TEMOS TEMPO TENAZ TENDA TENDE TENDI TENDO TENHA TENHO TENOR TENRA TENRO TENSA TENSO TENTA TENTE TENTO TERCE TEREI TEREM TERES TERIA TERMO TERNA TERNO TERRA TESAS TESES TESOS TESTA TESTE TESTO TETAS TETOS TEXTO TIARA TIDAS TIDOS TIFOS TIGRE TINAM TINAS TINEM TINES TINGA TINGE TINGI TINHA TINIA TINIR TINIS TINIU TINJA TINJO TINTA TINTO TIPAS TIPOS TIQUE TIRAI TIRAM TIRAR TIRAS TIREI TIREM TIRES TIROS TIROU TISNA TISNE TISNO TIVER TOADA TOADO TOAIS TOARA TOAVA TOCAI TOCAM TOCAR TOCAS TOCHA TOCOU TODAS TODOS TOEIS TOGAI TOGAM TOGAR TOGAS TOGOU TOGUE TOIRO TOJOS TOLAS TOLDA TOLDE TOLDO TOLHA TOLHE TOLHI TOLHO TOLOS TOMAI TOMAM TOMAR TOMAS TOMBA TOMBE TOMBO TOMEI TOMEM TOMES TOMOS TOMOU TONAI TONAL TONAM TONAR TONAS TONEI TONEL TONEM TONES TONOU TONTA TONTO TOPAI TOPAM TOPAR TOPAS TOPEI TOPEM TOPES TOPOS TOPOU TOQUE TORAI TORAM TORAR TORAS TORCE TORCI TORDA TORDO TOREI TOREM TORES TORGA TORNA TORNE TORNO TOROS TOROU TORPE TORRA TORRE TORRO TORSO TORTA TORTO TORVA TORVE TORVO TOSCA TOSCO TOSSE TOSSI TOSTA TOSTE TOSTO TOTAL TOTEM TOUCA TOUCO TOURA TOURO TRACE TRAEM TRAGA TRAGO TRAIA TRAIO TRAIR TRAIS TRAIU TRAJA TRAJE TRAJO TRAMA TRAME TRAMO TRAPO TRATA TRATE TRATO TRAVA TRAVE TRAVO TRELA TREMA TREME TREMI TREMO TRENS TREPA TREPE TREPO TRETA TREVA TREVO TREZE TRIAI TRIAM TRIAR TRIAS TRIBO TRIEI TRIEM TRIES TRIGO TRINA TRINE TRINO TRIOS TRIOU TRIPA TROAI TROAM TROAR TROAS TROCA TROCE TROCO TROEI TROEM TROES TRONO TROOU TROPA TROTA TROTE TROTO TROVA TROVE TROVO TRUFA TRUFE TRUFO TRUPE TRUTA TUBAS TUBOS TUFAI TUFAM TUFAR TUFAS TUFEI TUFEM TUFES TUFOS TUFOU TUGIA TUGIR TUGIU TUMBA TUMOR TUNAS TUPLO TURBA TURBE TURBO TURCA TURCO TURFA TURMA TURNO TURRA TURVA TURVE TURVO TUSSA TUSSO TUTOR UIVAI UIVAM UIVAR UIVAS UIVEI UIVEM UIVES UIVOS UIVOU ULTRA ULULA ULULE ULULO UNAIS UNGEM UNGES UNGIA UNGIR UNGIS UNGIU UNHAI UNHAM UNHAR UNHAS UNHEI UNHEM UNHES UNHOU UNIAM UNIAS UNIDA UNIDO UNJAM UNJAS UNTAI UNTAM UNTAR UNTAS UNTEI UNTEM UNTES UNTOU URBES URDAM URDAS URDEM URDES URDIA URDIR URDIS URDIU UREIA URGEM URGES URGIA URGIR URGIS URGIU URINA URINE URINO URJAM URJAS URNAS URRAI URRAM URRAR URRAS URREI URREM URRES URROS URROU URSAS URSOS URUBU URZAL URZES USADA USADO USAIS USAVA USEIS USINA USUAL USURA VACAS VADES VADIA VADIE VADIO VAGAI VAGAM VAGAR VAGAS VAGEM VAGOS VAGOU VAGUE VAIAI VAIAM VAIAR VAIAS VAIEI VAIEM VAIES VAIOU VALAI VALAM VALAR VALAS VALEI VALEM VALER VALES VALEU VALHA VALHO VALIA VALOR VALOU VALSA VALSE VALSO VALVA VAMOS VAPOR VARAI VARAL VARAM VARAR VARAS VAREI VAREM VARES VARIA VARIE VARIO VARIZ VAROU VARRA VARRE VARRI VARRO VASAS VASOS VASTA VASTO VAZAI VAZAM VAZAR VAZAS VAZEI VAZEM VAZES VAZIA VAZIE VAZIO VAZOU VEADA VEADO VEDAI VEDAM VEDAR VEDAS VEDEI VEDEM VEDES VEDOU VEIAS VEIGA VEIOS VEJAM VEJAS VELAI VELAM VELAR VELAS VELEI VELEM VELES VELHA VELHO VELOU VELOZ VEMOS VENCE VENCI VENDA VENDE VENDI VENDO VENHA VENHO VENTA VENTO VERBA VERBO VERDE VEREI VEREM VERES VERGA VERGO VERIA VERME VERSA VERSE VERSO VERTA VERTE VERTI VERTO VESGA VESGO VESPA VESTE VESTI VETAI VETAM VETAR VETAS VETEI VETEM VETES VETOR VETOS VETOU VEXAI VEXAM VEXAR VEXAS VEXEI VEXEM VEXES VEXOU VEZES VIAJA VIAJE VIAJO VIBRA VIBRE VIBRO VICIA VICIE VIDAS VIDES VIDRA VIDRE VIDRO VIELA VIERA VIGAS VIGIA VIGIE VIGIO VIGOR VILAS VIMOS VINCA VINCO VINDA VINDE VINDO VINGA VINGO VINHA VINHO VINIL VINIS VINTE VIOLA VIOLE VIOLO VIRAI VIRAL VIRAM VIRAR VIRAS VIREI VIREM VIRES VIRIA VIRIL VIRIS VIROU VISAI VISAM VISAR VISAS VISCO VISEI VISEM VISES VISOR VISOS VISOU VISSE VISTA VISTE VISTO VITAE VITAL VIVAM VIVAS VIVAZ VIVEI VIVEM VIVER VIVES VIVEU VIVIA VIVOS VIZIR VOADA VOADO VOAIS VOAVA VOCAL VODCA VOEIS VOEJA VOEJE VOEJO VOGAI VOGAL VOGAM VOGAR VOGAS VOGOU VOGUE VOLTA VOLTE VOLTO VOLTS VOLVA VOLVE VOLVI VOLVO VORAZ VOSSA VOSSO VOTAI VOTAM VOTAR VOTAS VOTEI VOTEM VOTES VOTOS VOTOU VOZES VULGO VULTO VULVA XAILE XALES XELIM XEQUE XEREZ XIITA XINGA XINGO XISTO XVIII ZANGA ZANGO ZARPA ZARPE ZARPO ZEBRA ZEBRE ZEBRO ZELAI ZELAM ZELAR ZELAS ZELEI ZELEM ZELES ZELOS ZELOU ZEROS ZINCA ZINCO ZOADA ZOADO ZOAIS ZOARA ZOAVA ZOEIS ZOMBA ZOMBE ZOMBO ZONAL ZONAS ZONZO ZOOMS ZORRA ZORRO ZULOS ZUMBA ZUMBE ZUMBI ZUMBO ZURRA ZURRE ZURRO ZURZA ZURZE ZURZI ZURZO","acc":{"ESTAS":"ESTÁS","ENTAO":"ENTÃO","ESTAO":"ESTÃO","SERIO":"SÉRIO","RAZAO":"RAZÃO","ATRAS":"ATRÁS","IRMAO":"IRMÃO","UNICA":"ÚNICA","MANHA":"MANHÃ","FORCA":"FORÇA","FACIL":"FÁCIL","UNICO":"ÚNICO","SITIO":"SÍTIO","MIUDA":"MIÚDA","MIUDO":"MIÚDO","FACAS":"FAÇAS","AVIAO":"AVIÃO","OTIMO":"ÓTIMO","SAIDA":"SAÍDA","SAUDE":"SAÚDE","NIVEL":"NÍVEL","SERAO":"SERÃO","PRECO":"PREÇO","BRACO":"BRAÇO","SENAO":"SENÃO","SERIE":"SÉRIE","RADIO":"RÁDIO","VERAO":"VERÃO","GRACA":"GRAÇA","FACAM":"FAÇAM","VIDEO":"VÍDEO","HEROI":"HERÓI","LIDER":"LÍDER","DANCA":"DANÇA","LOUCA":"LOUÇA","VISAO":"VISÃO","EPOCA":"ÉPOCA","IAMOS":"ÍAMOS","OBVIO":"ÓBVIO","OUCAM":"OUÇAM","TERAS":"TERÁS","OPCAO":"OPÇÃO","SERAS":"SERÁS","GENIO":"GÉNIO","TERAO":"TERÃO","VIRUS":"VÍRUS","PECAS":"PEÇAS","LICAO":"LIÇÃO","IRMAS":"IRMÃS","NACAO":"NAÇÃO","SAIDO":"SAÍDO","COPIA":"CÓPIA","BOTAO":"BOTÃO","CACAR":"CAÇAR","INDIA":"ÍNDIA","ALIAS":"ALIÁS","TUNEL":"TÚNEL","SOCIO":"SÓCIO","MAMAE":"MAMÃE","UNIAO":"UNIÃO","POREM":"PORÉM","MEDIA":"MÉDIA","JUIZO":"JUÍZO","SALAO":"SALÃO","MARCO":"MARÇO","PENIS":"PÉNIS","AGUAS":"ÁGUAS","AEREA":"AÉREA","NOCAO":"NOÇÃO","DUZIA":"DÚZIA","OTIMA":"ÓTIMA","DOLAR":"DÓLAR","TENIS":"TÉNIS","ALIBI":"ÁLIBI","MEDIO":"MÉDIO","ALBUM":"ÁLBUM","VIUVA":"VIÚVA","EXITO":"ÊXITO","CESAR":"CÉSAR","REFEM":"REFÉM","FARAO":"FARAÓ","LANCA":"LANÇA","CAIDO":"CAÍDO","MAFIA":"MÁFIA","AREAS":"ÁREAS","AEREO":"AÉREO","VIRAO":"VIRÃO","PATIO":"PÁTIO","ACIDO":"ÁCIDO","VERAS":"VERÁS","AGUIA":"ÁGUIA","OXALA":"OXALÁ","PRACA":"PRAÇA","INDIO":"ÍNDIO","FARAS":"FARÁS","LAPIS":"LÁPIS","LENCO":"LENÇO","GUIAO":"GUIÃO","FURIA":"FÚRIA","OPERA":"ÓPERA","MAGOA":"MÁGOA","OICAM":"OIÇAM","ACOES":"AÇÕES","INVES":"INVÉS","SABIO":"SÁBIO","BALAO":"BALÃO","LESAO":"LESÃO","LACOS":"LAÇOS","BARAO":"BARÃO","SOTAO":"SÓTÃO","ARABE":"ÁRABE","FUSAO":"FUSÃO","FEMEA":"FÊMEA","ALEMA":"ALEMÃ","LIMAO":"LIMÃO","TERCA":"TERÇA","BONUS":"BÓNUS","RUIDO":"RUÍDO","ANEIS":"ANÉIS","VICIO":"VÍCIO","BOFIA":"BÓFIA","PORAO":"PORÃO","POCAO":"POÇÃO","SAIRA":"SAIRÁ","ETICA":"ÉTICA","LEOES":"LEÕES","SUICA":"SUÍÇA","JUIZA":"JUÍZA","UTEIS":"ÚTEIS","VILAO":"VILÃO","BERCO":"BERÇO","DESCA":"DESÇA","SABAO":"SABÃO","AUDIO":"ÁUDIO","GEMEA":"GÉMEA","UTERO":"ÚTERO","TRARA":"TRARÁ","MOVEL":"MÓVEL","TERCO":"TERÇO","OUCAS":"OUÇAS","CACAS":"CAÇAS","TESAO":"TESÃO","SUTIA":"SUTIÃ","OBVIA":"ÓBVIA","FOGAO":"FOGÃO","DIRAO":"DIRÃO","SIRIA":"SÍRIA","ORGAO":"ÓRGÃO","DURAO":"DURÃO","TRENO":"TRENÓ","TABUA":"TÁBUA","ATRIO":"ÁTRIO","MOCAO":"MOÇÃO","ANOES":"ANÕES","CHICA":"CHIÇA","ORFAO":"ÓRFÃO","OSCAR":"ÓSCAR","RUINA":"RUÍNA","DANCO":"DANÇO","SOCIA":"SÓCIA","TEDIO":"TÉDIO","MUMIA":"MÚMIA","TAXIS":"TÁXIS","PONEI":"PÓNEI","OBITO":"ÓBITO","LABIO":"LÁBIO","REUNE":"REÚNE","FIEIS":"FIÉIS","GEMEO":"GÉMEO","VACUO":"VÁCUO","SEMEN":"SÉMEN","VAGAO":"VAGÃO","MERCE":"MERCÊ","DESCO":"DESÇO","MUTUO":"MÚTUO","GRAOS":"GRÃOS","ANIMO":"ÂNIMO","GALES":"GALÊS","SODIO":"SÓDIO","IDOLO":"ÍDOLO","SUPOE":"SUPÕE","NODOA":"NÓDOA","RACAS":"RAÇAS","ACOLA":"ACOLÁ","CALCA":"CALÇA","ARDUO":"ÁRDUO","PECAM":"PEÇAM","DARAO":"DARÃO","OSSEA":"ÓSSEA","CAIRA":"CAIRÁ","TORAX":"TÓRAX","NEVOA":"NÉVOA","RECEM":"RECÉM","FENIX":"FÉNIX","LOICA":"LOIÇA","SUICO":"SUÍÇO","POCOS":"POÇOS","ATOMO":"ÁTOMO","RACAO":"RAÇÃO","COCAR":"COÇAR","OBTEM":"OBTÉM","MOCAS":"MOÇAS","PINCA":"PINÇA","CIUME":"CIÚME","POLEN":"PÓLEN","DETEM":"DETÉM","TRACO":"TRAÇO","ETICO":"ÉTICO","EPICO":"ÉPICO","BETAO":"BETÃO","FORUM":"FÓRUM","HELIO":"HÉLIO","VENIA":"VÉNIA","TACAS":"TAÇAS","ICONE":"ÍCONE","MELAO":"MELÃO","CACAM":"CAÇAM","PEOES":"PEÕES","FUTIL":"FÚTIL","DEBIL":"DÉBIL","COLON":"CÓLON","PAPAO":"PAPÃO","CAIDA":"CAÍDA","MUTUA":"MÚTUA","AMBAR":"ÂMBAR","HABIL":"HÁBIL","REUNA":"REÚNA","LOCAO":"LOÇÃO","APICE":"ÁPICE","USARA":"USARÁ","TENUE":"TÉNUE","DIRAS":"DIRÁS","PAGAO":"PAGÃO","TRACA":"TRAÇA","EPICA":"ÉPICA","LIBIA":"LÍBIA","VARAO":"VARÃO","FEMUR":"FÉMUR","CHALE":"CHALÉ","EXODO":"ÊXODO","PREVE":"PREVÊ","OASIS":"OÁSIS","VIUVO":"VIÚVO","TALAO":"TALÃO","PAVAO":"PAVÃO","OXIDO":"ÓXIDO","SOSIA":"SÓSIA","VENCA":"VENÇA","LATEX":"LÁTEX","DOCIL":"DÓCIL","REDEA":"RÉDEA","ARPAO":"ARPÃO","PODIO":"PÓDIO","MACOS":"MAÇOS","EXPOS":"EXPÔS","TIBIA":"TÍBIA","DARAS":"DARÁS","OVULO":"ÓVULO","GALAO":"GALÃO","OMEGA":"ÓMEGA","CUPAO":"CUPÃO","OICAS":"OIÇAS","OLEOS":"ÓLEOS","LITIO":"LÍTIO","ANSIA":"ÂNSIA","LATAO":"LATÃO","REVES":"REVÉS","CALAO":"CALÃO","FURAO":"FURÃO","MOCOS":"MOÇOS","HAREM":"HARÉM","NEVAO":"NEVÃO","PANCA":"PANÇA","NASCA":"NASÇA","PUXAO":"PUXÃO","IMPOE":"IMPÕE","SIRIO":"SÍRIO","SAUDA":"SAÚDA","LANCO":"LANÇO","TRIPE":"TRIPÉ","ALCAS":"ALÇAS","QUICA":"QUIÇÁ","AMAGO":"ÂMAGO","IMPAR":"ÍMPAR","LUPUS":"LÚPUS","EXPOE":"EXPÕE","ALAMO":"ÁLAMO","JURIS":"JÚRIS","EDIPO":"ÉDIPO","LILAS":"LILÁS","SIMIO":"SÍMIO","POCAS":"POÇAS","TUFAO":"TUFÃO","FILAO":"FILÃO","LABIA":"LÁBIA","RETEM":"RETÉM","LIRIO":"LÍRIO","IMPOS":"IMPÔS","OPOEM":"OPÕEM","PARIA":"PÁRIA","AVELA":"AVELÃ","ARDUA":"ÁRDUA","AVIDO":"ÁVIDO","CACOU":"CAÇOU","ANCIA":"ANCIÃ","LUCIO":"LÚCIO","REGUA":"RÉGUA","ACIDA":"ÁCIDA","CORCA":"CORÇA","MIOPE":"MÍOPE","ONCAS":"ONÇAS","GIRIA":"GÍRIA","AGEIS":"ÁGEIS","ROCAR":"ROÇAR","TRICO":"TRICÔ","VENCO":"VENÇO","EREIS":"ÉREIS","UMERO":"ÚMERO","AQUEM":"AQUÉM","ICARO":"ÍCARO","SAXAO":"SAXÃO","SAUDO":"SAÚDO","MACAR":"MAÇAR","MOBIL":"MÓBIL","ORFAS":"ÓRFÃS","OVNIS":"ÓVNIS","CALCO":"CALÇO","GAMAO":"GAMÃO","SUINO":"SUÍNO","AFEGA":"AFEGÃ","ARIDO":"ÁRIDO","GARCA":"GARÇA","MOIDO":"MOÍDO","VOARA":"VOARÁ","OSSEO":"ÓSSEO","UNCAO":"UNÇÃO","RACIO":"RÁCIO","BILIS":"BÍLIS","CODEA":"CÔDEA","TENIA":"TÉNIA","ADVEM":"ADVÉM","ARIDA":"ÁRIDA","CHULE":"CHULÉ","EGUAS":"ÉGUAS","DEPOS":"DEPÔS","TORCO":"TORÇO","DEDAO":"DEDÃO","HUMUS":"HÚMUS","TURNE":"TURNÉ","BIDAO":"BIDÃO","PITAO":"PITÃO","SOARA":"SOARÁ","BARIO":"BÁRIO","ODIOS":"ÓDIOS","MIJAO":"MIJÃO","SUPOS":"SUPÔS","OTICA":"ÓTICA","COTAO":"COTÃO","HIMEN":"HÍMEN","MOIDA":"MOÍDA","CESIO":"CÉSIO","FACAO":"FAÇÃO","IMPIO":"ÍMPIO","EBRIO":"ÉBRIO","EBANO":"ÉBANO","UNIRA":"UNIRÁ","CARIE":"CÁRIE","FLUOR":"FLÚOR","HIFEN":"HÍFEN","TALIO":"TÁLIO","PILAO":"PILÃO","SUINA":"SUÍNA","BANZE":"BANZÉ","REUNO":"REÚNO","LIBIO":"LÍBIO","SUFLE":"SUFLÊ","CODEX":"CÓDEX","VOLEI":"VÓLEI","EDITO":"ÉDITO","AVIDA":"ÁVIDA","OCULO":"ÓCULO","AGIRA":"AGIRÁ","DALIA":"DÁLIA","MAMAO":"MAMÃO","AGATA":"ÁGATA","ABACO":"ÁBACO","FORCO":"FORÇO","ROIDO":"ROÍDO","TORCA":"TORÇA","CURIA":"CÚRIA","LEGUA":"LÉGUA","BAIAS":"BAÍAS","DEPOE":"DEPÕE","GALIO":"GÁLIO","DEMAO":"DEMÃO","MONHE":"MONHÉ","REPOE":"REPÕE","OTICO":"ÓTICO","FUCAS":"FUÇAS","CIVEL":"CÍVEL","LACAR":"LAÇAR","PEUGA":"PEÚGA","CISAO":"CISÃO","ROCOU":"ROÇOU","TACAO":"TACÃO","BUZIO":"BÚZIO","DUBIA":"DÚBIA","DUBIO":"DÚBIO","OPOES":"OPÕES","ACARO":"ÁCARO","DOIAM":"DOÍAM","BOIAO":"BOIÃO","TAMIL":"TÂMIL","TORIO":"TÓRIO","FLUIA":"FLUÍA","LETAO":"LETÃO","AUREA":"ÁUREA","EBRIA":"ÉBRIA","IMPIA":"ÍMPIA","BOSAO":"BOSÃO","PUBIS":"PÚBIS","DOERA":"DOERÁ","ICADA":"IÇADA","REGIO":"RÉGIO","PIOES":"PIÕES","AGUCA":"AGUÇA","COCAM":"COÇAM","PITEU":"PITÉU","RATAO":"RATÃO","EGIDE":"ÉGIDE","PORAS":"PORÁS","GAVEA":"GÁVEA","BACOS":"BAÇOS","BUFAO":"BUFÃO","BOCIO":"BÓCIO","LERAO":"LERÃO","OPORA":"OPORÁ","ARGON":"ÁRGON","ILHEU":"ILHÉU","REGIA":"RÉGIA","REGIE":"RÉGIE","URICO":"ÚRICO","CACHE":"CACHÊ","ICADO":"IÇADO","MACAO":"MAÇÃO","VAZAO":"VAZÃO","ATICA":"ATIÇA","COCOU":"COÇOU","FOLIO":"FÓLIO","PACOS":"PAÇOS","TILIA":"TÍLIA","BISAO":"BISÃO","MECAM":"MEÇAM","CAPAO":"CAPÃO","DERBI":"DÉRBI","SILEX":"SÍLEX","AZIMO":"ÁZIMO","BOITE":"BOÎTE","FUJAO":"FUJÃO","ROIDA":"ROÍDA","BABAO":"BABÃO","BEICO":"BEIÇO","RIRAO":"RIRÃO","FOTAO":"FOTÃO","ADOCA":"ADOÇA","ALDEA":"ALDEÃ","MECAS":"MEÇAS","PRIAO":"PRIÃO","RUIRA":"RUIRÁ","SARCA":"SARÇA","XENON":"XÉNON","ALCAR":"ALÇAR","FATUO":"FÁTUO","ROCAM":"ROÇAM","RAFIA":"RÁFIA","ARIAS":"ÁRIAS","INDEX":"ÍNDEX","ATOIS":"ATÓIS","CILIO":"CÍLIO","LUMEN":"LÚMEN","REPOS":"REPÔS","TICAO":"TIÇÃO","BRETA":"BRETÃ","COIBE":"COÍBE","DIODO":"DÍODO","NASCO":"NASÇO","ROJAO":"ROJÃO","AUREO":"ÁUREO","RANCO":"RANÇO","SERTA":"SERTÃ","SAVEL":"SÁVEL","MACAM":"MAÇAM","ROMAO":"ROMÃO","CIRIO":"CÍRIO","IGNEA":"ÍGNEA","ALCOU":"ALÇOU","BIRMA":"BIRMÃ","FIFIA":"FÍFIA","JOGAO":"JOGÃO","TATIL":"TÁTIL","BACAS":"BAÇAS","CARAO":"CARÃO","DALEM":"DALÉM","DOARA":"DOARÁ","REMOI":"REMÓI","JONIO":"JÓNIO","LERAS":"LERÁS","ORCAR":"ORÇAR","RADON":"RÁDON","ANODO":"ÂNODO","INTUI":"INTUÍ","ICAVA":"IÇAVA","RABAO":"RABÃO","RIRAS":"RIRÁS","ATICO":"ATIÇO","ACUDE":"AÇUDE","BRACA":"BRAÇA","CACOA":"CAÇOA","CHUCO":"CHUÇO","CRERA":"CRERÁ","DACAO":"DAÇÃO","ERICA":"ERIÇA","LAPAO":"LAPÃO","LACOU":"LAÇOU","ROCAS":"ROÇAS","ROIAM":"ROÍAM","ROSEA":"RÓSEA","TELAO":"TELÃO","OBICE":"ÓBICE","CASAO":"CASÃO","CACAO":"CAÇÃO","CORCO":"CORÇO","CANON":"CÂNON","LOBAO":"LOBÃO","MACOU":"MAÇOU","MESAO":"MESÃO","MOIAM":"MOÍAM","PATAO":"PATÃO","PODAO":"PODÃO","PIFIA":"PÍFIA","PIFIO":"PÍFIO","REZAO":"REZÃO","ROLAO":"ROLÃO","VIEIS":"VÍEIS","APOEM":"APÕEM","APOES":"APÕES","CACOE":"CAÇOE","CEARA":"CEARÁ","COIBA":"COÍBA","COIBO":"COÍBO","ICARA":"IÇARÁ","LAREU":"LARÉU","MIARA":"MIARÁ","RUIAM":"RUÍAM","ROSEO":"RÓSEO","OCIOS":"ÓCIOS","ANIAO":"ANIÃO","ANUIA":"ANUÍA","BEICA":"BEIÇA","CACAI":"CAÇAI","CACOO":"CAÇOO","CHOES":"CHÕES","FEMEO":"FÊMEO","GAJAO":"GAJÃO","IONIO":"IÓNIO","LIEIS":"LÍEIS","NIVEO":"NÍVEO","ORARA":"ORARÁ","OIDIO":"OÍDIO","RANCA":"RANÇA","REVEM":"REVÊM","ROIAS":"ROÍAS","RUIDA":"RUÍDA","RUBEO":"RÚBEO","SOROR":"SÓROR","TECAM":"TEÇAM","TETUM":"TÉTUM","ZINIA":"ZÍNIA","ADOCO":"ADOÇO","AFARA":"AFARÁ","AFACA":"AFAÇA","AFACO":"AFAÇO","AGUCO":"AGUÇO","ALUIA":"ALUÍA","ALCAI":"ALÇAI","ALCAM":"ALÇAM","AMENS":"AMÉNS","APORA":"APORÁ","ATENS":"ATÉNS","AVIRA":"AVIRÁ","AVENS":"AVÉNS","AUNAM":"AÚNAM","AUNAS":"AÚNAS","AUNEM":"AÚNEM","AUNES":"AÚNES","BOUCA":"BOUÇA","BOUCO":"BOUÇO","BARIA":"BÁRIA","COVAO":"COVÃO","COXAO":"COXÃO","DEOES":"DEÕES","DOIAS":"DOÍAS","ERICO":"ERIÇO","FRUIA":"FRUÍA","FUMAO":"FUMÃO","ICAIS":"IÇAIS","LETAS":"LETÃS","MACAI":"MAÇAI","MOIAS":"MOÍAS","MEDAO":"MÉDÃO","NUVEO":"NÚVEO","ORCAI":"ORÇAI","ORCAM":"ORÇAM","ORCOU":"ORÇOU","RIJAO":"RIJÃO","ROCAI":"ROÇAI","RUCAS":"RUÇAS","RUCOS":"RUÇOS","RUIAS":"RUÍAS","RIEIS":"RÍEIS","SINHA":"SINHÁ","SEMEA":"SÊMEA","TECAS":"TEÇAS","UVACA":"UVAÇA","VIUVE":"VIÚVE","EBULO":"ÉBULO","ETIMO":"ÉTIMO","INVIO":"ÍNVIO","URICA":"ÚRICA"}};
-const ROWS = 6, LEN = 5, GAMES_PER_DAY = 5;
+const LEN = 5, GAMES_PER_DAY = 5, START = Date.UTC(2026, 10, 4);
 const LOCAL_KEY = "quina-v1", IMPORTED_KEY = "palavrle-imported";
 
-const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g,"").toUpperCase();
+const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
 const DICT = new Set(DICTW.plain.split(" ").concat(Object.keys(DICTW.acc)));
 const display = n => DICTW.acc[n] || n;
-const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const $ = s => document.querySelector(s);
-
+const store = {
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+  set(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
+};
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: "pkce", detectSessionInUrl: true, persistSession: true } });
 
+const MODES = {
+  daily:   { name: "Jogo do dia", desc: "5 palavras por dia, contam para o ranking" },
+  archive: { name: "Arquivo", desc: "Dias anteriores, não contam para o ranking" },
+  single:  { name: "Treino", desc: "Palavras aleatórias, quantas quiseres" },
+  duo:     { name: "Dueto", desc: "2 palavras ao mesmo tempo, 7 tentativas" },
+  quartet: { name: "Quarteto", desc: "4 palavras ao mesmo tempo, 9 tentativas" },
+  timed:   { name: "Contra-relógio", desc: "Quantas palavras acertas em 3 minutos?" }
+};
+const ACH = {
+  primeira: ["Primeira vitória", "Ganha um jogo do dia"],
+  mouche: ["Na mouche", "Acerta à 1.ª tentativa"],
+  duas: ["Rapidinho", "Acerta à 2.ª tentativa"],
+  ufa: ["Por um triz", "Acerta à 6.ª tentativa"],
+  pleno: ["Pleno", "Ganha os 5 jogos do mesmo dia"],
+  perfeito: ["Dia perfeito", "Os 5 do dia, todos em 3 tentativas ou menos"],
+  serie5: ["Em série", "5 vitórias seguidas"],
+  serie10: ["Imparável", "10 vitórias seguidas"],
+  serie25: ["Lendário", "25 vitórias seguidas"],
+  dias7: ["Assíduo", "Joga 7 dias seguidos"],
+  dias30: ["Viciado", "Joga 30 dias seguidos"],
+  jogos100: ["Veterano", "100 jogos do dia"],
+  jogos500: ["Mestre", "500 jogos do dia"],
+  dificil10: ["Sem rede", "10 vitórias em modo difícil"],
+  madrugador: ["Madrugador", "Termina um jogo antes das 7h"],
+  treino50: ["Ginásio", "Ganha 50 treinos"],
+  dueto: ["Dupla", "Ganha um Dueto"],
+  quarteto: ["Malabarista", "Ganha um Quarteto"],
+  relampago: ["Relâmpago", "10 palavras num contra-relógio"],
+  arquivo10: ["Arqueólogo", "Ganha 10 jogos do arquivo"]
+};
+
 /* ---------- state ---------- */
-let me = null;            // {id, username}
-let day = null, games = [], secondsLeft = 0, loadedAt = 0;
-let slot = 0, cur = Array(LEN).fill(""), pos = 0, busy = false, started = false;
+let me = null;
+let mode = "daily";
+let daily = null;          // {day, today, date, games, seconds_left}
+let archive = null;        // same shape, for a past day
+let loadedAt = 0;
+let slot = 0, archSlot = 0;
+let prac = null;           // practice state from the server
+let pracEnds = 0, timedTick = null, timedEnding = false;
+let cur = Array(LEN).fill(""), pos = 0, busy = false, started = false;
+let installEvt = null;
 function resetCur(){ cur = Array(LEN).fill(""); pos = 0; }
-const game = () => games[slot];
 
 /* ---------- helpers ---------- */
-function toast(msg, ms = 1500){
-  const t = document.createElement("div"); t.className = "toast"; t.textContent = msg; $("#toasts").appendChild(t);
+function toast(msg, ms = 1600, action){
+  const t = document.createElement("div"); t.className = "toast";
+  const s = document.createElement("span"); s.textContent = msg; t.appendChild(s);
+  if (action){ const b = document.createElement("button"); b.type = "button"; b.textContent = action.label; b.onclick = () => { action.fn(); t.remove(); }; t.appendChild(b); ms = Math.max(ms, 4500); }
+  $("#toasts").appendChild(t);
   if (ms > 0) setTimeout(() => { t.style.opacity = "0"; setTimeout(() => t.remove(), 300); }, ms);
 }
 function errMsg(e){
@@ -242,7 +388,10 @@ function errMsg(e){
   if (/rate limit|too many/i.test(m)) return "Demasiadas tentativas. Espera uns minutos e tenta outra vez.";
   if (/username_taken/.test(m)) return "Esse nome já está a ser usado. Escolhe outro.";
   if (/invalid_username/.test(m)) return "Usa 3 a 20 caracteres: letras sem acentos, números, ponto, hífen ou _.";
-  if (/Failed to fetch|NetworkError|network/i.test(m)) return "Sem ligação à internet. Tenta outra vez.";
+  if (/not_admin/.test(m)) return "Só o administrador pode ver isto.";
+  if (/not_finished/.test(m)) return "Termina o jogo primeiro para veres como os outros jogaram.";
+  if (/display_mismatch/.test(m)) return "A grafia não corresponde à palavra sugerida.";
+  if (/Failed to fetch|NetworkError|network|Load failed/i.test(m)) return "Sem ligação à internet. Tenta outra vez.";
   return "Algo correu mal. Tenta outra vez.";
 }
 async function rpc(name, args){
@@ -250,24 +399,22 @@ async function rpc(name, args){
   if (error) throw error;
   return data;
 }
-function pad(n){ return String(n).padStart(2, "0"); }
-function countdownText(){
-  let s = Math.max(0, secondsLeft - Math.floor((Date.now() - loadedAt) / 1000));
-  return `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s % 3600 / 60))}:${pad(s % 60)}`;
-}
+const pad = n => String(n).padStart(2, "0");
+const fmtT = s => s == null ? "–" : `${Math.floor(s / 60)}:${pad(s % 60)}`;
+function secsLeftToday(){ return Math.max(0, (daily ? daily.seconds_left : 0) - Math.floor((Date.now() - loadedAt) / 1000)); }
+function countdownText(){ const s = secsLeftToday(); return `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s % 3600 / 60))}:${pad(s % 60)}`; }
 function siteUrl(){ return location.origin + location.pathname; }
+function dayDate(d, opts){ return new Date(START + d * 864e5).toLocaleDateString("pt-PT", Object.assign({ timeZone: "UTC", day: "numeric", month: "long" }, opts || {})); }
+const colorblind = () => document.body.classList.contains("cb");
+const sqMap = () => colorblind() ? { correct: "🟧", present: "🟦", absent: "⬛" } : { correct: "🟩", present: "🟨", absent: "⬛" };
 
 /* ---------- gate (login, name, recovery) ---------- */
 const gate = $("#gate"), gateIn = $("#gateIn");
-const logoTiles = `<div class="gate-tiles" aria-hidden="true">${[["P","correct"],["A","absent"],["L","present"],["A","absent"],["V","correct"]].map(([l,c]) => `<div class="tile ${c}">${l}</div>`).join("")}</div>`;
+const logoTiles = `<div class="gate-tiles" aria-hidden="true">${[["P","correct"],["A","absent"],["L","present"],["A","absent"],["V","correct"]].map(([l, c]) => `<div class="tile ${c}">${l}</div>`).join("")}</div>`;
 const googleSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.4h6.5a5.6 5.6 0 0 1-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.7z"/><path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-2.9l-3.9-3c-1.1.7-2.5 1.2-4.1 1.2-3.1 0-5.8-2.1-6.7-5H1.3v3.1A12 12 0 0 0 12 24z"/><path fill="#FBBC05" d="M5.3 14.3a7.2 7.2 0 0 1 0-4.6V6.6H1.3a12 12 0 0 0 0 10.8l4-3.1z"/><path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4A12 12 0 0 0 1.3 6.6l4 3.1c.9-2.9 3.6-4.9 6.7-4.9z"/></svg>';
 let authMode = "login";
-
 function hasLocalGames(){
-  try{
-    const s = JSON.parse(localStorage.getItem(LOCAL_KEY) || "null");
-    return !!(s && s.stats && s.stats.played > 0) && !localStorage.getItem(IMPORTED_KEY);
-  }catch(e){ return false; }
+  try{ const s = JSON.parse(store.get(LOCAL_KEY) || "null"); return !!(s && s.stats && s.stats.played > 0) && !store.get(IMPORTED_KEY); }catch(e){ return false; }
 }
 function showAuth(msg){
   gate.hidden = false;
@@ -286,7 +433,8 @@ function showAuth(msg){
       <button class="btn primary full" id="authSubmit" type="submit">${signup ? "Criar conta" : "Entrar"}</button>
     </form>
     <button class="linkbtn" id="modeBtn" type="button">${signup ? "Já tens conta? Entra" : "Ainda não tens conta? Cria uma"}</button>
-    ${signup ? "" : `<button class="linkbtn" id="forgotBtn" type="button">Esqueci-me da palavra-passe</button>`}`;
+    ${signup ? "" : `<button class="linkbtn" id="forgotBtn" type="button">Esqueci-me da palavra-passe</button>`}
+    <p class="sub"><a href="privacidade.html" style="color:inherit">Privacidade</a></p>`;
   $("#gBtn").onclick = async () => {
     const { error } = await sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: siteUrl() } });
     if (error) $("#authErr").textContent = errMsg(error);
@@ -329,6 +477,7 @@ function showForgot(){
     $("#backBtn").onclick = () => showAuth();
   };
 }
+let recovering = false, flowRunning = false;
 function showRecovery(){
   gate.hidden = false;
   gateIn.innerHTML = `${logoTiles}<h1>Palavrle</h1><p>Escolhe uma palavra-passe nova.</p>
@@ -343,7 +492,8 @@ function showRecovery(){
     const { error } = await sb.auth.updateUser({ password: $("#npw").value });
     $("#rBtn").disabled = false;
     if (error){ $("#rErr").textContent = errMsg(error); return; }
-    toast("Palavra-passe alterada"); recovering = false; afterLogin();
+    toast("Palavra-passe alterada"); recovering = false;
+    if (started) gate.hidden = true; else afterLogin();
   };
 }
 function showName(msg, current){
@@ -373,12 +523,12 @@ function showName(msg, current){
   };
 }
 async function logout(){
-  await sb.auth.signOut(); me = null; started = false; closeModals();
+  stopTimed();
+  await sb.auth.signOut(); me = null; started = false; closeModals(); closeMenu();
   authMode = "login"; showAuth();
 }
 
 /* ---------- login flow ---------- */
-let recovering = false, flowRunning = false;
 async function afterLogin(){
   if (flowRunning || recovering) return;
   flowRunning = true;
@@ -386,14 +536,14 @@ async function afterLogin(){
     const { data: { session } } = await sb.auth.getSession();
     if (!session){ showAuth(); return; }
     if (location.search.includes("code=")) history.replaceState(null, "", siteUrl());
-    const { data: prof, error } = await sb.from("profiles").select("id, username").eq("id", session.user.id).maybeSingle();
+    const { data: prof, error } = await sb.from("profiles").select("id, username, is_admin, hard_mode").eq("id", session.user.id).maybeSingle();
     if (error) throw error;
-    me = { id: session.user.id, username: prof && prof.username };
+    me = { id: session.user.id, username: prof && prof.username, is_admin: !!(prof && prof.is_admin), hard_mode: !!(prof && prof.hard_mode) };
     if (!me.username){ flowRunning = false; showName(); return; }
     await importLocal();
-    await loadToday();
+    await Promise.all([loadDaily(), loadExtraWords()]);
     gate.hidden = true;
-    if (!started){ started = true; slot = firstOpenSlot(); resetCur(); renderAll(); fit(); maybeFirstHelp(); }
+    if (!started){ started = true; mode = "daily"; slot = firstOpen(daily.games); resetCur(); renderAll(); fit(); maybeFirstHelp(); }
   }catch(e){
     gate.hidden = false;
     gateIn.innerHTML = `${logoTiles}<h1>Palavrle</h1><p class="err">${esc(errMsg(e))}</p><button class="btn primary full" id="retry" type="button">Tentar outra vez</button><button class="linkbtn" id="out2" type="button">Sair</button>`;
@@ -403,47 +553,82 @@ async function afterLogin(){
 }
 async function importLocal(){
   let s = null;
-  try{ if (localStorage.getItem(IMPORTED_KEY)) return; s = JSON.parse(localStorage.getItem(LOCAL_KEY) || "null"); }catch(e){ return; }
-  if (!s || !s.stats || !s.stats.played){ try{ localStorage.setItem(IMPORTED_KEY, "1"); }catch(e){} return; }
+  try{ if (store.get(IMPORTED_KEY)) return; s = JSON.parse(store.get(LOCAL_KEY) || "null"); }catch(e){ return; }
+  if (!s || !s.stats || !s.stats.played){ store.set(IMPORTED_KEY, "1"); return; }
   const list = [];
   const add = (d, gs) => (gs || []).forEach((g, i) => { if (g && g.guesses && g.guesses.length) list.push({ day: +d, slot: i, guesses: g.guesses }); });
   Object.entries(s.history || {}).forEach(([d, gs]) => add(d, gs));
   if (s.day != null && !(s.history && s.history[s.day])) add(s.day, s.games);
   const r = await rpc("import_local", { p_games: list });
-  try{ localStorage.setItem(IMPORTED_KEY, "1"); }catch(e){}
+  store.set(IMPORTED_KEY, "1");
   if (r && r.imported > 0) setTimeout(() => toast(`Passámos ${r.imported} ${r.imported === 1 ? "jogo" : "jogos"} deste telemóvel para a tua conta`, 3500), 600);
 }
-async function loadToday(){
-  const r = await rpc("get_today");
-  const changed = day !== null && r.day !== day;
-  day = r.day; games = r.games; secondsLeft = r.seconds_left; loadedAt = Date.now();
-  if (changed){ slot = 0; resetCur(); }
+async function loadExtraWords(){
+  try{ const x = await rpc("extra_words"); Object.entries(x || {}).forEach(([k, v]) => { DICT.add(k); DICTW.acc[k] = v; }); }catch(e){}
 }
-function firstOpenSlot(){ const i = games.findIndex(g => g.status === "playing"); return i < 0 ? 0 : i; }
-function maybeFirstHelp(){
-  try{ if (!localStorage.getItem("palavrle-seen")){ localStorage.setItem("palavrle-seen", "1"); showHelp(); } }catch(e){}
+async function loadDaily(){
+  const r = await rpc("get_day", { p_day: null });
+  const changed = daily && r.day !== daily.day;
+  daily = r; loadedAt = Date.now();
+  if (changed){ slot = firstOpen(daily.games); if (mode === "daily") resetCur(); }
+}
+function firstOpen(gs){ const i = gs.findIndex(g => g.status === "playing"); return i < 0 ? 0 : i; }
+function maybeFirstHelp(){ if (!store.get("palavrle-seen")){ store.set("palavrle-seen", "1"); showHelp(); } }
+
+/* ---------- view model ---------- */
+const isDayMode = () => mode === "daily" || mode === "archive";
+function dayData(){ return mode === "archive" ? archive : daily; }
+function curSlot(){ return mode === "archive" ? archSlot : slot; }
+function curGame(){ const d = dayData(); return d && d.games[curSlot()]; }
+function view(){
+  if (isDayMode()){
+    const g = curGame(); if (!g) return null;
+    return { boards: [{ rows: g.rows, solved: g.status === "won", answer: g.answer }], max: 6, playing: g.status === "playing", status: g.status };
+  }
+  if (!prac) return null;
+  return { boards: prac.boards, max: prac.max, playing: prac.status === "playing", status: prac.status };
+}
+function hardActive(){
+  if (!isDayMode()) return false;
+  const g = curGame(); if (!g) return false;
+  return g.rows.length ? !!g.hard : !!me.hard_mode;
 }
 
 /* ---------- board & keyboard ---------- */
-const board = $("#board"), kb = $("#keyboard"), picker = $("#picker");
-function buildBoard(){
-  board.innerHTML = "";
-  for (let r = 0; r < ROWS; r++){
-    const row = document.createElement("div"); row.className = "row"; row.setAttribute("role", "row");
-    for (let c = 0; c < LEN; c++){ const t = document.createElement("div"); t.className = "tile"; t.setAttribute("role", "gridcell"); row.appendChild(t); }
-    board.appendChild(row);
-  }
+const boardsEl = $("#boards"), kb = $("#keyboard"), bar = $("#bar");
+let builtShape = "";
+function buildBoards(){
+  const v = view(); if (!v) { boardsEl.innerHTML = ""; builtShape = ""; return; }
+  const shape = v.boards.length + "x" + v.max;
+  if (shape === builtShape) return;
+  builtShape = shape;
+  boardsEl.innerHTML = "";
+  boardsEl.style.setProperty("--bcols", v.boards.length === 1 ? 1 : 2);
+  v.boards.forEach((b, bi) => {
+    const el = document.createElement("div"); el.className = "board"; el.dataset.b = bi; el.style.setProperty("--rows", v.max);
+    for (let r = 0; r < v.max; r++){
+      const row = document.createElement("div"); row.className = "row";
+      for (let c = 0; c < LEN; c++){ const t = document.createElement("div"); t.className = "tile"; row.appendChild(t); }
+      el.appendChild(row);
+    }
+    boardsEl.appendChild(el);
+  });
+  fit();
 }
-function renderBoard(){
-  const g = game(); if (!g) return;
-  [...board.children].forEach((row, r) => {
-    const tiles = [...row.children];
-    if (r < g.rows.length){
-      const w = [...g.rows[r].word], c = g.rows[r].colors;
-      tiles.forEach((t, i) => { t.className = "tile " + c[i]; t.textContent = w[i]; });
-    } else if (r === g.rows.length && g.status === "playing"){
-      tiles.forEach((t, i) => { const ch = cur[i] || ""; t.className = "tile active" + (ch ? " filled" : "") + (i === pos && !busy ? " cursor" : ""); t.textContent = ch; t.dataset.i = i; });
-    } else tiles.forEach(t => { t.className = "tile"; t.textContent = ""; });
+function renderBoards(){
+  buildBoards();
+  const v = view(); if (!v) return;
+  [...boardsEl.children].forEach((el, bi) => {
+    const b = v.boards[bi]; el.classList.toggle("solved", !!b.solved);
+    [...el.children].forEach((row, r) => {
+      const tiles = [...row.children];
+      if (r < b.rows.length){
+        const w = [...b.rows[r].word], c = b.rows[r].colors;
+        tiles.forEach((t, i) => { t.className = "tile " + c[i]; t.textContent = w[i]; delete t.dataset.i; });
+      } else if (r === b.rows.length && v.playing && !b.solved){
+        tiles.forEach((t, i) => { const ch = cur[i] || ""; t.className = "tile active" + (ch ? " filled" : "") + (i === pos && !busy ? " cursor" : ""); t.textContent = ch; t.dataset.i = i; });
+      } else tiles.forEach(t => { t.className = "tile"; t.textContent = ""; delete t.dataset.i; });
+    });
   });
 }
 const KEYS = [["Q","E","R","T","U","I","O","P"],["A","S","D","F","G","H","J","L"],["ENTER","Z","X","C","V","B","N","M","BACK"]];
@@ -465,284 +650,751 @@ function buildKeyboard(){
     kb.appendChild(row);
   });
 }
-function renderKeyboard(){
-  const g = game(); if (!g) return;
+function letterStates(rows){
   const rank = { absent: 1, present: 2, correct: 3 }, st = {};
-  g.rows.forEach(r => { const n = norm(r.word); r.colors.forEach((v, i) => { const l = n[i]; if (!st[l] || rank[v] > rank[st[l]]) st[l] = v; }); });
-  kb.querySelectorAll(".key").forEach(b => { const k = b.dataset.key; b.classList.remove("correct","present","absent"); if (st[k]) b.classList.add(st[k]); });
+  rows.forEach(r => { const n = norm(r.word); r.colors.forEach((v, i) => { const l = n[i]; if (!st[l] || rank[v] > rank[st[l]]) st[l] = v; }); });
+  return st;
 }
-function renderPicker(){
-  picker.innerHTML = '<span class="lbl">Jogo</span>';
-  games.forEach((g, i) => {
-    const b = document.createElement("button"); b.className = "pick"; b.type = "button"; b.textContent = i + 1;
-    if (g.status !== "playing") b.classList.add(g.status);
-    if (i === slot) b.classList.add("on");
-    b.setAttribute("aria-label", `Jogo ${i + 1}` + (g.status === "won" ? ", ganho" : g.status === "lost" ? ", perdido" : ""));
-    b.addEventListener("click", () => { if (busy) return; slot = i; resetCur(); renderAll(); b.blur(); });
-    picker.appendChild(b);
+function renderKeyboard(){
+  const v = view();
+  kb.querySelectorAll(".key").forEach(b => { b.classList.remove("correct", "present", "absent", "multi"); b.style.background = ""; });
+  if (!v) return;
+  if (v.boards.length === 1){
+    const st = letterStates(v.boards[0].rows);
+    kb.querySelectorAll(".key").forEach(b => { if (st[b.dataset.key]) b.classList.add(st[b.dataset.key]); });
+    return;
+  }
+  const per = v.boards.map(b => b.solved ? null : letterStates(b.rows));
+  const col = s => s === "correct" ? "var(--tc)" : s === "present" ? "var(--tp)" : s === "absent" ? "var(--absent)" : "var(--key)";
+  kb.querySelectorAll(".key").forEach(b => {
+    const k = b.dataset.key; if (k.length !== 1) return;
+    const cs = per.map(st => st ? (st[k] || null) : "solved");
+    const open = cs.filter(c => c !== "solved");
+    if (open.every(c => !c)) return;
+    if (open.every(c => c === "absent")){ b.classList.add("absent"); return; }
+    b.classList.add("multi");
+    if (cs.length === 2) b.style.background = `linear-gradient(to right, ${col(cs[0])} 50%, ${col(cs[1])} 50%)`;
+    else b.style.background = `linear-gradient(to right, ${col(cs[0])} 50%, ${col(cs[1])} 50%) top/100% 50% no-repeat, linear-gradient(to right, ${col(cs[2])} 50%, ${col(cs[3])} 50%) bottom/100% 50% no-repeat`;
   });
 }
-function renderAll(){ renderPicker(); renderBoard(); renderKeyboard(); }
+function renderBar(){
+  bar.innerHTML = "";
+  const add = html => bar.insertAdjacentHTML("beforeend", html);
+  if (isDayMode()){
+    const d = dayData(); if (!d) return;
+    if (mode === "archive") add(`<span class="lbl">Arquivo · ${esc(dayDate(d.day))}</span>`);
+    else add(`<span class="lbl">Jogo</span>`);
+    d.games.forEach((g, i) => {
+      const b = document.createElement("button"); b.className = "pick"; b.type = "button"; b.textContent = i + 1;
+      if (g.status !== "playing") b.classList.add(g.status);
+      if (i === curSlot()) b.classList.add("on");
+      b.setAttribute("aria-label", `Jogo ${i + 1}` + (g.status === "won" ? ", ganho" : g.status === "lost" ? ", perdido" : ""));
+      b.onclick = () => { if (busy) return; if (mode === "archive") archSlot = i; else slot = i; resetCur(); renderAll(); b.blur(); };
+      bar.appendChild(b);
+    });
+    if (hardActive()) add(`<span class="chip warn">Difícil</span>`);
+    if (mode === "archive"){ add(`<button class="btn ghost small" id="barToday" type="button">Hoje</button>`); $("#barToday").onclick = () => setMode("daily"); }
+    return;
+  }
+  if (mode === "timed"){
+    const left = prac && prac.status === "playing" ? Math.max(0, Math.ceil((pracEnds - Date.now()) / 1000)) : 0;
+    add(`<span class="lbl">Contra-relógio</span><span class="timer${left <= 20 && prac && prac.status === "playing" ? " low" : ""}" id="timer">${Math.floor(left / 60)}:${pad(left % 60)}</span><span class="score" id="tscore">✓ ${prac ? prac.score : 0}</span>`);
+    if (!prac || prac.status !== "playing"){ add(`<button class="btn primary small" id="barStart" type="button">Começar</button>`); $("#barStart").onclick = startTimed; }
+    return;
+  }
+  add(`<span class="lbl">${MODES[mode].name}</span>`);
+  if (prac && prac.boards.length > 1) add(`<span class="chip">${prac.guesses}/${prac.max}</span>`);
+  add(`<button class="btn ghost small" id="barNew" type="button">${prac && prac.status === "playing" ? "Desistir" : "Nova"}</button>`);
+  $("#barNew").onclick = () => { if (busy) return; if (prac && prac.status === "playing" && prac.guesses > 0) { confirmBox("Desistir deste jogo e começar outro?", "Desistir", () => newPractice()); } else newPractice(); };
+}
+function renderAll(){ renderBar(); renderBoards(); renderKeyboard(); }
 function fit(){
-  const wrap = $("#boardWrap"), h = wrap.clientHeight - 16, w = wrap.clientWidth;
-  const bw = Math.max(150, Math.min(350, w, h / 1.2));
-  document.documentElement.style.setProperty("--bw", bw + "px");
+  const v = view(); if (!v) return;
+  const wrap = $("#boardWrap"), H = wrap.clientHeight - 16, W = wrap.clientWidth;
+  const n = v.boards.length, cols = n === 1 ? 1 : 2, rowsB = n === 4 ? 2 : 1;
+  const bgap = n === 1 ? 0 : 10, g = n === 1 ? 5 : 3;
+  const tw = ((W - (cols - 1) * bgap) / cols - 4 * g) / 5;
+  const th = ((H - (rowsB - 1) * bgap) / rowsB - (v.max - 1) * g) / v.max;
+  const t = Math.max(14, Math.min(n === 1 ? 62 : 44, tw, th));
+  document.body.dataset.boards = n;
+  boardsEl.style.setProperty("--t", t.toFixed(1) + "px");
+  boardsEl.style.setProperty("--g", g + "px");
+  boardsEl.style.setProperty("--bgap", bgap + "px");
+}
+
+/* ---------- modes ---------- */
+async function setMode(m, opts){
+  if (busy) return;
+  closeModals(); closeMenu();
+  if (m !== "timed") stopTimed();
+  if (m === "archive"){ showArchive(); return; }
+  mode = m; resetCur();
+  if (m === "daily"){ builtShape = ""; if (opts && opts.slot != null) slot = opts.slot; renderAll(); return; }
+  prac = null; builtShape = ""; renderAll();
+  if (m === "timed"){ showTimedIntro(); return; }
+  try{
+    let p = await rpc("practice_resume", { p_mode: m });
+    if (!p || p.status !== "playing") p = await rpc("practice_start", { p_mode: m });
+    if (mode !== m) return;
+    prac = p; builtShape = ""; renderAll();
+  }catch(e){ toast(errMsg(e)); }
+}
+async function newPractice(){
+  try{ prac = await rpc("practice_start", { p_mode: mode }); resetCur(); builtShape = ""; closeModals(); renderAll(); }
+  catch(e){ toast(errMsg(e)); }
+}
+async function openArchiveDay(d){
+  try{
+    const r = await rpc("get_day", { p_day: d });
+    archive = r; archSlot = firstOpen(r.games); mode = "archive"; resetCur(); builtShape = ""; closeModals(); renderAll();
+  }catch(e){ toast(errMsg(e)); }
+}
+
+/* timed */
+function stopTimed(){ clearInterval(timedTick); timedTick = null; }
+function showTimedIntro(){
+  openModal(`<h2>Contra-relógio</h2>
+    <p>Tens <b>3 minutos</b> para acertar o máximo de palavras. Cada palavra tem 6 tentativas; se falhares, passa à seguinte.</p>
+    <p>Não conta para o ranking diário, mas tem um ranking próprio com o teu melhor resultado.</p>
+    <div class="center"><button class="btn primary" id="tGo" type="button">Começar</button></div>`);
+  $("#tGo").onclick = startTimed;
+}
+async function startTimed(){
+  if (busy) return;
+  try{
+    prac = await rpc("practice_start", { p_mode: "timed" });
+    pracEnds = Date.now() + prac.seconds_left * 1000; timedEnding = false;
+    resetCur(); builtShape = ""; closeModals(); renderAll();
+    stopTimed(); timedTick = setInterval(tickTimed, 250);
+  }catch(e){ toast(errMsg(e)); }
+}
+function tickTimed(){
+  if (!prac || prac.status !== "playing"){ stopTimed(); return; }
+  const left = Math.max(0, Math.ceil((pracEnds - Date.now()) / 1000));
+  const t = $("#timer"); if (t){ t.textContent = `${Math.floor(left / 60)}:${pad(left % 60)}`; t.classList.toggle("low", left <= 20); }
+  if (left <= 0 && !timedEnding && !busy) endTimed();
+}
+async function endTimed(){
+  timedEnding = true; stopTimed();
+  let r;
+  try{ r = await rpc("practice_finish", { p_id: prac.id }); }catch(e){ r = Object.assign({}, prac, { status: "done", best: prac.score }); }
+  prac = r; renderAll();
+  const ans = r.boards && r.boards[0] && r.boards[0].answer;
+  openModal(`<h2>Tempo!</h2>
+    <div class="result"><span class="word" style="font-size:44px">${r.score}</span><br>${r.score === 1 ? "palavra acertada" : "palavras acertadas"}</div>
+    ${ans ? `<p class="note">A última palavra era <b>${esc(ans)}</b>.</p>` : ""}
+    <p class="note">O teu melhor resultado: <b>${r.best}</b></p>
+    <div class="center"><button class="btn primary" id="tAgain" type="button">Jogar outra vez</button><button class="btn ghost" id="tRank" type="button">Ranking</button></div>`);
+  $("#tAgain").onclick = startTimed;
+  $("#tRank").onclick = () => showRanking("timed");
 }
 
 /* ---------- modals ---------- */
-let timer = null;
-function anyModalOpen(){ return [...document.querySelectorAll(".overlay")].some(o => !o.hidden) || !gate.hidden; }
-function openModal(el){ el.hidden = false; const c = el.querySelector(".close"); if (c) c.focus(); }
-function closeModals(){ const a = document.activeElement; if (a && a.closest && a.closest(".overlay")) a.blur(); document.querySelectorAll(".overlay").forEach(o => o.hidden = true); clearInterval(timer); }
-document.querySelectorAll(".overlay").forEach(o => o.addEventListener("click", e => { if (e.target === o) closeModals(); }));
-const closeBtn = '<button class="icon-btn close" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>';
-function exRow(word, idx, cls){ return '<div class="ex">' + [...word].map((l, i) => `<div class="tile ${i === idx ? cls : "plain"}">${l}</div>`).join("") + "</div>"; }
+const modal = $("#modal");
+let modalTimer = null;
+const closeSvg = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+function openModal(html){
+  modal.innerHTML = `<div class="modal" role="dialog" aria-modal="true"><button class="icon-btn close" aria-label="Fechar" type="button">${closeSvg}</button>${html}</div>`;
+  modal.querySelector(".close").onclick = closeModals;
+  modal.hidden = false;
+  modal.querySelector(".close").focus({ preventScroll: true });
+  return modal.querySelector(".modal");
+}
+function closeModals(){
+  const a = document.activeElement; if (a && a.closest && a.closest(".overlay")) a.blur();
+  modal.hidden = true; clearInterval(modalTimer);
+}
+modal.addEventListener("click", e => { if (e.target === modal) closeModals(); });
+function confirmBox(text, okLabel, fn){
+  openModal(`<h2>Tens a certeza?</h2><p>${esc(text)}</p><div class="center"><button class="btn danger" id="cOk" type="button">${esc(okLabel)}</button><button class="btn ghost" id="cNo" type="button">Cancelar</button></div>`);
+  $("#cOk").onclick = () => { closeModals(); fn(); };
+  $("#cNo").onclick = closeModals;
+}
+function anyOverlay(){ return !modal.hidden || !gate.hidden || !$("#menu").hidden; }
 
+/* menu */
+function icoFor(m){
+  const p = { daily: "cpaa", archive: "aapa", single: "caaa", duo: "cpcp", quartet: "cpap", timed: "pcpc" }[m] || "aaaa";
+  return `<span class="ico" aria-hidden="true">${[...p].map(c => `<i class="${c === "c" ? "c" : c === "p" ? "p" : ""}"></i>`).join("")}</span>`;
+}
+function openMenu(){
+  const item = (m) => `<button class="menu-item${mode === m ? " on" : ""}" data-m="${m}" type="button">${icoFor(m)}<span>${MODES[m].name}<small>${MODES[m].desc}</small></span></button>`;
+  $("#menuPanel").innerHTML = `<div class="menu-title">Palavrle</div>
+    ${item("daily")}${item("archive")}
+    <div class="menu-sec">Treinar</div>
+    ${item("single")}${item("duo")}${item("quartet")}${item("timed")}
+    <div class="menu-sec">Mais</div>
+    <button class="menu-item" data-a="rank" type="button">Rankings</button>
+    <button class="menu-item" data-a="profile" type="button">O meu perfil</button>
+    <button class="menu-item" data-a="settings" type="button">Definições</button>
+    <button class="menu-item" data-a="help" type="button">Como jogar</button>
+    ${me && me.is_admin ? `<button class="menu-item" data-a="admin" type="button">Administração</button>` : ""}
+    <button class="menu-item" data-a="out" type="button">Sair</button>`;
+  $("#menu").hidden = false;
+  $("#menuPanel").querySelectorAll("[data-m]").forEach(b => b.onclick = () => setMode(b.dataset.m));
+  const acts = { rank: () => showRanking(), profile: () => showProfile(), settings: showSettings, help: showHelp, admin: showAdmin, out: logout };
+  $("#menuPanel").querySelectorAll("[data-a]").forEach(b => b.onclick = () => { closeMenu(); acts[b.dataset.a](); });
+  const first = $("#menuPanel .menu-item"); if (first) first.focus({ preventScroll: true });
+}
+function closeMenu(){ const a = document.activeElement; if (a && a.closest && a.closest("#menu")) a.blur(); $("#menu").hidden = true; }
+$("#menu").addEventListener("click", e => { if (e.target.id === "menu") closeMenu(); });
+
+/* help */
+function exRow(word, idx, cls){ return '<div class="ex">' + [...word].map((l, i) => `<div class="tile ${i === idx ? cls : "plain"}">${l}</div>`).join("") + "</div>"; }
 function showHelp(){
-  const m = $("#helpModal");
-  m.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="hT">${closeBtn}
-  <h2 id="hT">Como jogar</h2>
+  openModal(`<h2>Como jogar</h2>
   <p>Adivinha a palavra em 6 tentativas.</p>
   <ul><li>Cada tentativa tem de ser uma palavra válida de 5 letras.</li>
   <li>A cor das peças mostra se estiveste perto.</li>
-  <li>Toca num quadrado da linha para escrever nessa posição. Assim podes pôr primeiro as letras que já sabes.</li></ul>
+  <li>Toca num quadrado da linha para escrever nessa posição.</li></ul>
   <p><b>Exemplos</b></p>
   ${exRow("PRAIA", 0, "correct")}<p><b>P</b> está na palavra e no sítio certo.</p>
   ${exRow("LIVRO", 1, "present")}<p><b>I</b> está na palavra, mas noutro sítio.</p>
   ${exRow("CAMPO", 3, "absent")}<p><b>P</b> não está na palavra.</p>
-  <p>Não precisas de escrever acentos nem cedilha: escreve <b>CORACAO</b> e o jogo mostra <b>CORAÇÃO</b>. As letras K, W e Y não entram.</p>
-  <p>Há <b>5 palavras novas por dia</b>, iguais para toda a gente. Mudam à meia-noite (hora de Lisboa).</p>
-  <p><b>Pontos para o ranking:</b> acertar à 1.ª tentativa vale 6 pontos, à 2.ª vale 5, e assim por diante até 1 ponto à 6.ª. Perder vale 0.</p></div>`;
-  m.querySelector(".close").onclick = closeModals; openModal(m);
+  <p>Não precisas de escrever acentos nem cedilha: escreve <b>CORACAO</b> e o jogo mostra <b>CORAÇÃO</b>. As letras K, W e Y não entram. Se uma palavra que conheces não for aceite, podes sugeri-la.</p>
+  <h4>Jogo do dia</h4>
+  <p>5 palavras novas por dia, iguais para toda a gente, que mudam à meia-noite de Lisboa. Acertar à 1.ª tentativa vale 6 pontos, à 2.ª vale 5, e assim até 1 ponto à 6.ª.</p>
+  <h4>Tempo</h4>
+  <p>O tempo de cada jogo conta da 1.ª à última tentativa, por isso podes pensar à vontade na primeira palavra. Serve de desempate no ranking de pontos e tem um ranking próprio, Rapidez. Jogos com mais de 30 minutos não contam.</p>
+  <h4>Modo difícil</h4>
+  <p>As letras que já descobriste têm de ser usadas: as verdes no mesmo sítio, as amarelas em qualquer sítio. Cada vitória em modo difícil vale <b>+1 ponto</b>. Liga-o nas Definições; vale a partir do jogo seguinte que começares.</p>
+  <h4>Treinar</h4>
+  <p>No menu tens o Arquivo (dias anteriores), o Treino (palavras aleatórias), o Dueto e o Quarteto (2 ou 4 palavras ao mesmo tempo, com 7 e 9 tentativas) e o Contra-relógio (quantas palavras acertas em 3 minutos). Nenhum conta para o ranking diário.</p>`);
+}
+
+/* settings */
+function showSettings(){
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const m = openModal(`<h2>Definições</h2>
+    <div class="setting"><div><b>Modo difícil</b><span>Tens de usar as letras que já descobriste. +1 ponto por vitória. Vale a partir do próximo jogo que começares.</span></div>
+      <button class="switch" id="sHard" role="switch" aria-checked="${!!me.hard_mode}" aria-label="Modo difícil" type="button"></button></div>
+    <div class="setting"><div><b>Modo daltónico</b><span>Laranja e azul em vez de verde e amarelo.</span></div>
+      <button class="switch" id="sCb" role="switch" aria-checked="${colorblind()}" aria-label="Modo daltónico" type="button"></button></div>
+    <div class="setting"><div><b>Instalar como app</b><span id="instTxt">${standalone ? "Já estás a usar a app instalada." :
+      installEvt ? "Põe o Palavrle no ecrã principal, com ícone próprio e em ecrã inteiro." :
+      ios ? "No Safari, toca em Partilhar e depois em “Adicionar ao ecrã principal”." :
+      "No menu do navegador, escolhe “Instalar app” ou “Adicionar ao ecrã principal”."}</span></div>
+      ${!standalone && installEvt ? `<button class="btn primary small" id="sInst" type="button">Instalar</button>` : ""}</div>
+    <div class="setting"><div><b>Nome de jogador</b><span>${esc(me.username)}</span></div><button class="btn ghost small" id="sName" type="button">Mudar</button></div>
+    <p class="note"><a href="privacidade.html" style="color:inherit">Política de privacidade</a></p>`);
+  $("#sHard").onclick = async e => {
+    const b = e.currentTarget, on = b.getAttribute("aria-checked") !== "true";
+    b.setAttribute("aria-checked", on); b.disabled = true;
+    try{ await rpc("set_hard_mode", { p_on: on }); me.hard_mode = on; toast(on ? "Modo difícil ligado" : "Modo difícil desligado"); renderBar(); }
+    catch(err){ b.setAttribute("aria-checked", !on); toast(errMsg(err)); }
+    b.disabled = false;
+  };
+  $("#sCb").onclick = e => {
+    const on = !colorblind(); document.body.classList.toggle("cb", on); store.set("palavrle-cb", on ? "1" : ""); e.currentTarget.setAttribute("aria-checked", on); renderKeyboard();
+  };
+  const si = $("#sInst"); if (si) si.onclick = async () => { installEvt.prompt(); try{ await installEvt.userChoice; }catch(e){} installEvt = null; closeModals(); };
+  $("#sName").onclick = () => { closeModals(); showName("", me.username); };
 }
 
 /* share */
 function dayText(){
-  const sq = { correct: "🟩", present: "🟨", absent: "⬛" };
-  const done = games.map((g, i) => ({ g, i })).filter(x => x.g.status !== "playing");
+  const sq = sqMap(), d = daily;
+  const done = d.games.map((g, i) => ({ g, i })).filter(x => x.g.status !== "playing");
   const won = done.filter(x => x.g.status === "won").length;
-  let txt = `Palavrle #${day + 1} · ${won}/${done.length} ${done.length === 1 ? "ganho" : "ganhos"}`;
+  let txt = `Palavrle #${d.day + 1} · ${won}/${done.length} ${done.length === 1 ? "ganho" : "ganhos"}`;
   done.forEach(({ g, i }) => {
     const score = g.status === "won" ? g.rows.length : "X";
-    txt += `\n\nJogo ${i + 1} · ${score}/6\n` + g.rows.map(r => r.colors.map(v => sq[v]).join("")).join("\n");
+    txt += `\n\nJogo ${i + 1} · ${score}/6${g.hard ? "*" : ""}\n` + g.rows.map(r => r.colors.map(v => sq[v]).join("")).join("\n");
   });
+  if (done.some(x => x.g.hard)) txt += "\n\n* modo difícil";
   return txt + `\n\n${siteUrl()}`;
 }
 function showCopyBox(txt){
   let box = $("#copyBox");
-  if (!box){ box = document.createElement("textarea"); box.className = "copybox"; box.id = "copyBox"; box.readOnly = true; $("#statsModal .modal").appendChild(box); }
+  if (!box){ box = document.createElement("textarea"); box.className = "copybox"; box.id = "copyBox"; box.readOnly = true; modal.querySelector(".modal").appendChild(box); }
   box.value = txt; box.focus(); box.select(); toast("Seleciona e copia o texto");
 }
-async function copyResults(){
-  const txt = dayText();
-  try{ await navigator.clipboard.writeText(txt); toast("Resultados copiados"); } catch(e){ showCopyBox(txt); }
+async function copyText(txt){ try{ await navigator.clipboard.writeText(txt); toast("Copiado"); }catch(e){ showCopyBox(txt); } }
+async function systemShare(txt){ try{ await navigator.share({ text: txt }); }catch(e){ if (e && e.name === "AbortError") return; copyText(txt); } }
+function shareButtons(txt){
+  return `<div class="share">
+    <a class="btn wa" href="https://wa.me/?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 20zm4.4-6c-.2-.1-1.4-.7-1.6-.8s-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 0 1-3.2-2.8c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.7-1.7c-.2-.5-.4-.4-.5-.4h-.5a.9.9 0 0 0-.7.3 2.8 2.8 0 0 0-.9 2.1 4.9 4.9 0 0 0 1 2.6 11.2 11.2 0 0 0 4.3 3.8c1.6.7 2.2.7 3 .6a2.6 2.6 0 0 0 1.7-1.2 2.1 2.1 0 0 0 .1-1.2c0-.1-.2-.2-.4-.3z"/></svg>
+      WhatsApp</a>
+    <button class="btn ghost" data-copy type="button">Copiar</button>
+    ${navigator.share ? `<button class="btn ghost" data-more type="button">Outras apps</button>` : ""}
+  </div>`;
 }
-async function systemShare(){
-  try{ await navigator.share({ text: dayText() }); } catch(e){ if (e && e.name === "AbortError") return; copyResults(); }
+function wireShare(root, txt){
+  const c = root.querySelector("[data-copy]"); if (c) c.onclick = () => copyText(txt);
+  const m = root.querySelector("[data-more]"); if (m) m.onclick = () => systemShare(txt);
+}
+
+/* mini grids */
+function miniGrid(grid){ return `<div class="g">${grid.map(r => r.map(c => `<i class="${c}"></i>`).join("")).join("")}</div>`; }
+
+/* game summary: how everyone did */
+async function showSummary(day, s){
+  const m = openModal(`<p class="loading">A carregar…</p>`);
+  let r;
+  try{ r = await rpc("game_summary", { p_day: day, p_slot: s }); }
+  catch(e){ m.querySelector(".loading").textContent = errMsg(e); return; }
+  if (modal.hidden) return;
+  const pct = r.players ? Math.round(100 * r.wins / r.players) : 0, max = Math.max(1, ...r.dist);
+  m.innerHTML = `<button class="icon-btn close" aria-label="Fechar" type="button">${closeSvg}</button>
+    <h2>Jogo ${s + 1} · ${esc(dayDate(day))}</h2>
+    <div class="result"><span class="word">${esc(r.answer)}</span></div>
+    <div class="statrow four" style="margin-top:14px">
+      <div class="stat"><b>${r.players}</b><span>Jogadores</span></div>
+      <div class="stat"><b>${pct}%</b><span>Acertaram</span></div>
+      <div class="stat"><b>${r.avg != null ? String(r.avg).replace(".", ",") : "–"}</b><span>Média de tentativas</span></div>
+      <div class="stat"><b>${fmtT(r.avg_seconds)}</b><span>Tempo médio</span></div>
+    </div>
+    <h3>Distribuição</h3>
+    <div class="dist">${r.dist.map((v, i) => `<div class="drow"><i>${i + 1}</i><div class="bar" style="width:${Math.max(7, Math.round(100 * v / max))}%">${v}</div></div>`).join("")}</div>
+    <h3>Como jogaram</h3>
+    <div class="minis">${r.grids.map(x => `<div class="mini${x.me ? " me" : ""}">${miniGrid(x.grid)}<button class="nm" type="button" data-u="${esc(x.username)}">${esc(x.username)}</button><span class="sc">${x.status === "won" ? x.grid.length : "X"}/6${x.seconds != null ? " · " + fmtT(x.seconds) : ""}${x.hard ? " · difícil" : ""}</span></div>`).join("")}</div>`;
+  m.querySelector(".close").onclick = closeModals;
+  m.querySelectorAll(".nm[data-u]").forEach(b => b.onclick = () => showProfile(b.dataset.u));
+}
+
+/* end of a daily game */
+async function showDayResult(){
+  const d = daily, g = d.games[slot];
+  const nextOpen = d.games.findIndex(x => x.status === "playing");
+  const playedToday = d.games.filter(x => x.status !== "playing").length, wonToday = d.games.filter(x => x.status === "won").length;
+  const txt = dayText();
+  const m = openModal(`<h3>Hoje · ${playedToday}/5 jogados, ${wonToday} ganhos</h3>
+    <div class="today">${d.games.map((x, i) => `<button type="button" class="pick ${x.status !== "playing" ? x.status : ""}${i === slot ? " on" : ""}" data-go="${i}" aria-label="Jogo ${i + 1}">${i + 1}</button>`).join("")}</div>
+    <div class="result">${g.status === "won" ? `Acertaste o jogo ${slot + 1} em ${g.rows.length} ${g.rows.length === 1 ? "tentativa" : "tentativas"}${g.seconds != null ? ` e ${fmtT(g.seconds)}` : ""}${g.hard ? " (difícil, +1 ponto)" : ""}.` : `A palavra do jogo ${slot + 1} era`}<br><span class="word">${esc(g.answer || "")}</span>
+      <div class="others" id="othersLine">A ver como correu aos outros…</div></div>
+    <div class="center"><button class="btn ghost small" id="seeOthers" type="button">Ver como jogaram os outros</button></div>
+    <div class="foot">
+      <div class="next"><small>Novas palavras em</small><b id="cd">${countdownText()}</b></div>
+      <div class="acts">${nextOpen >= 0 ? `<button class="btn primary" id="nextBtn" type="button">Jogo ${nextOpen + 1} →</button>` : `<span class="alldone">Jogaste os 5 de hoje!</span>`}</div>
+    </div>
+    <h3>Enviar os resultados de hoje</h3>
+    ${shareButtons(txt)}`);
+  wireShare(m, txt);
+  m.querySelectorAll("[data-go]").forEach(b => b.onclick = () => { slot = +b.dataset.go; resetCur(); closeModals(); renderAll(); });
+  const nb = $("#nextBtn"); if (nb) nb.onclick = () => { slot = nextOpen; resetCur(); closeModals(); renderAll(); };
+  $("#seeOthers").onclick = () => showSummary(d.day, slot);
+  modalTimer = setInterval(() => { const c = $("#cd"); if (c) c.textContent = countdownText(); }, 1000);
+  try{
+    const r = await rpc("game_summary", { p_day: d.day, p_slot: slot });
+    const l = $("#othersLine");
+    if (l) l.textContent = r.players <= 1 ? "Ainda és o único a terminar este jogo." : `${Math.round(100 * r.wins / r.players)}% dos ${r.players} jogadores acertaram${r.avg != null ? `, com média de ${String(r.avg).replace(".", ",")} tentativas` : ""}${r.avg_seconds != null ? ` e ${fmtT(r.avg_seconds)}` : ""}.`;
+  }catch(e){ const l = $("#othersLine"); if (l) l.textContent = ""; }
 }
 
 /* profile */
 function statsBlock(p){
   const pct = p.played ? Math.round(100 * p.wins / p.played) : 0, max = Math.max(1, ...p.dist);
-  const g = game(), hl = p.me && g && g.status === "won" ? g.rows.length - 1 : -1;
-  return `<div class="statrow six">
+  const avg = p.wins ? (p.dist.reduce((a, v, i) => a + v * (i + 1), 0) / p.wins).toFixed(1).replace(".", ",") : "–";
+  const today = daily ? daily.today : 0;
+  return `<div class="statrow">
       <div class="stat"><b>${p.played}</b><span>Jogados</span></div>
       <div class="stat"><b>${pct}</b><span>% Vitórias</span></div>
       <div class="stat"><b>${p.points}</b><span>Pontos</span></div>
       <div class="stat"><b>${p.cur_win}</b><span>Vitórias seguidas (máx. ${p.max_win})</span></div>
       <div class="stat"><b>${p.cur_days}</b><span>Dias seguidos (máx. ${p.max_days})</span></div>
-      <div class="stat"><b>${p.wins ? (p.dist.reduce((a, v, i) => a + v * (i + 1), 0) / p.wins).toFixed(1).replace(".", ",") : "–"}</b><span>Média de tentativas</span></div>
+      <div class="stat"><b>${avg}</b><span>Média de tentativas</span></div>
     </div>
     <h3>Distribuição de tentativas</h3>
-    <div class="dist">${p.dist.map((v, i) => `<div class="drow"><i>${i + 1}</i><div class="bar${i === hl ? " hl" : ""}" style="width:${Math.max(7, Math.round(100 * v / max))}%">${v}</div></div>`).join("")}</div>
+    <div class="dist">${p.dist.map((v, i) => `<div class="drow"><i>${i + 1}</i><div class="bar" style="width:${Math.max(7, Math.round(100 * v / max))}%">${v}</div></div>`).join("")}</div>
     <h3>Últimos 7 dias</h3>
     <div class="recent">${Array.from({ length: 7 }, (_, k) => {
-      const d = day - 6 + k, r = p.recent.find(x => x.day === d);
-      const lbl = d === day ? "Hoje" : `#${d + 1}`;
-      if (d < 0) return `<div class="rday"><b class="none">·</b>${lbl}</div>`;
-      if (!r) return `<div class="rday"><b class="none">0</b>${lbl}</div>`;
+      const d = today - 6 + k, r = p.recent.find(x => x.day === d);
+      const lbl = d === today ? "Hoje" : dayDate(d, { day: "numeric", month: "short" }).replace(".", "");
+      if (d < 0) return `<div class="rday"><b class="none">·</b>&nbsp;</div>`;
+      if (!r) return `<div class="rday"><b class="none">0</b>${esc(lbl)}</div>`;
       const lvl = r.wins === 0 ? "l0" : r.wins === r.played ? "l2" : "l1";
-      return `<div class="rday" title="${r.wins}/${r.played} ganhos"><b class="${lvl}">${r.points}</b>${lbl}</div>`;
+      return `<div class="rday" title="${r.wins}/${r.played} ganhos"><b class="${lvl}">${r.points}</b>${esc(lbl)}</div>`;
     }).join("")}</div>
-    <p class="note">Cada quadrado mostra os pontos desse dia.</p>`;
+    <p class="note">Cada quadrado mostra os pontos desse dia.</p>
+    <div class="statrow" style="margin-top:10px">
+      <div class="stat"><b>${p.hard_wins}</b><span>Vitórias em modo difícil</span></div>
+      <div class="stat"><b>${p.practice_wins}</b><span>Treinos ganhos</span></div>
+      <div class="stat"><b>${p.timed_best}</b><span>Melhor contra-relógio</span></div>
+    </div>`;
+}
+function speedBlock(sp){
+  if (!sp || !sp.count) return `<h3>Tempos</h3><p class="empty" style="padding:8px 0">Ainda sem vitórias cronometradas.</p>`;
+  const ws = sp.weeks.slice(-8), mx = Math.max(1, ...ws.map(w => w.avg));
+  return `<h3>Tempos</h3>
+    <div class="statrow">
+      <div class="stat"><b>${fmtT(sp.avg)}</b><span>Tempo médio por vitória</span></div>
+      <div class="stat"><b>${fmtT(sp.best)}</b><span>Vitória mais rápida</span></div>
+      <div class="stat"><b>${sp.count}</b><span>Vitórias cronometradas</span></div>
+    </div>
+    ${ws.length > 1 ? `<h3>Tempo médio por semana</h3>
+    <div class="bars">${ws.map(w => `<div style="height:${Math.round(100 * w.avg / mx)}%" title="${w.n} vitórias"><span>${fmtT(w.avg)}</span></div>`).join("")}</div>
+    <div class="barlbl">${ws.map(w => `<span>${esc(new Date(w.start + "T00:00:00Z").toLocaleDateString("pt-PT", { timeZone: "UTC", day: "numeric", month: "short" }).replace(".", ""))}</span>`).join("")}</div>
+    <p class="note">Barras mais baixas são semanas mais rápidas.</p>` : ""}
+    <p class="note">O tempo conta da 1.ª à última tentativa. Jogos com mais de 30 minutos e jogos importados não entram.</p>`;
+}
+function achBlock(p){
+  const n = p.achievements.filter(a => a.ok).length;
+  return `<h3>Conquistas · ${n}/${p.achievements.length}</h3>
+    <div class="ach">${p.achievements.map(a => { const d = ACH[a.id] || [a.id, ""]; return `<div class="badge${a.ok ? " ok" : ""}"><span class="medal" aria-hidden="true">${a.ok ? "✓" : "?"}</span><div><b>${esc(d[0])}</b><span>${esc(d[1])}</span></div></div>`; }).join("")}</div>`;
+}
+async function loadHistory(root, username, before){
+  const box = root.querySelector("#hist"); if (!box) return;
+  const more = root.querySelector("#histMore"); if (more) more.remove();
+  box.insertAdjacentHTML("beforeend", `<p class="loading" id="histLoad">A carregar…</p>`);
+  let r;
+  try{ r = await rpc("profile_history", { p_username: username || null, p_before: before == null ? null : before }); }
+  catch(e){ const l = $("#histLoad"); if (l) l.textContent = errMsg(e); return; }
+  const l = $("#histLoad"); if (l) l.remove();
+  if (!r.days.length && before == null){ box.innerHTML = `<p class="empty">Ainda não há jogos.</p>`; return; }
+  box.insertAdjacentHTML("beforeend", r.days.map(d => `<div class="hday"><h4>${esc(dayDate(d.day, { weekday: "long", day: "numeric", month: "long" }))}</h4>
+    <div class="hgames">${d.games.map(g => `<div class="hgame">${miniGrid(g.grid)}<span class="sc sub">${g.slot + 1} · ${g.status === "won" ? g.attempts : "X"}/6${g.hard ? "*" : ""}${g.seconds != null && !g.archive ? " · " + fmtT(g.seconds) : ""}${g.archive ? " · arq." : ""}</span>${g.word ? `<span class="w">${esc(g.word)}</span>` : ""}</div>`).join("")}</div></div>`).join(""));
+  if (r.more){
+    const last = r.days[r.days.length - 1].day;
+    box.insertAdjacentHTML("afterend", `<div class="center" id="histMore"><button class="btn ghost small" type="button">Mostrar mais</button></div>`);
+    root.querySelector("#histMore button").onclick = () => loadHistory(root, username, last);
+  }
 }
 async function showProfile(username){
-  const m = $("#statsModal");
-  m.innerHTML = `<div class="modal" role="dialog" aria-modal="true">${closeBtn}<p class="loading">A carregar…</p></div>`;
-  m.querySelector(".close").onclick = closeModals; openModal(m);
+  const m = openModal(`<p class="loading">A carregar…</p>`);
   let p;
-  try{ p = await rpc("profile_stats", { p_username: username || null }); }
+  let sp = null;
+  try{ [p, sp] = await Promise.all([rpc("profile_stats", { p_username: username || null }), rpc("profile_speed", { p_username: username || null }).catch(() => null)]); }
   catch(e){ m.querySelector(".loading").textContent = errMsg(e); return; }
-  if (m.hidden) return;
+  if (modal.hidden) return;
   const since = new Date(p.joined).toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric" });
-  let todayHtml = "";
-  if (p.me){
-    const g = game(), done = g && g.status !== "playing";
-    const nextOpen = games.findIndex(x => x.status === "playing");
-    const playedToday = games.filter(x => x.status !== "playing").length, wonToday = games.filter(x => x.status === "won").length;
-    const result = done ? `<div class="result">${g.status === "won" ? `Acertaste o jogo ${slot + 1} em ${g.rows.length} ${g.rows.length === 1 ? "tentativa" : "tentativas"}.` : `A palavra do jogo ${slot + 1} era`}<br><span class="word">${esc(g.answer || "")}</span></div>` : "";
-    todayHtml = `<h3>Hoje · ${playedToday}/5 jogados, ${wonToday} ganhos</h3>
-      <div class="today">${games.map((x, i) => `<button type="button" class="pick ${x.status !== "playing" ? x.status : "free"}" data-go="${i}" aria-label="Jogo ${i + 1}">${i + 1}</button>`).join("")}</div>
-      ${result}
-      <div class="foot">
-        <div class="next"><small>Novas palavras em</small><b id="cd">${countdownText()}</b></div>
-        <div class="acts">${nextOpen >= 0 ? `<button class="btn primary" id="nextBtn" type="button">Jogo ${nextOpen + 1} →</button>` : `<span class="alldone">Jogaste os 5 de hoje!</span>`}</div>
-      </div>
-      ${playedToday ? `<h3>Enviar os resultados de hoje</h3>
-      <div class="share">
-        <a class="btn wa" href="https://wa.me/?text=${encodeURIComponent(dayText())}" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 20zm4.4-6c-.2-.1-1.4-.7-1.6-.8s-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 0 1-3.2-2.8c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.7-1.7c-.2-.5-.4-.4-.5-.4h-.5a.9.9 0 0 0-.7.3 2.8 2.8 0 0 0-.9 2.1 4.9 4.9 0 0 0 1 2.6 11.2 11.2 0 0 0 4.3 3.8c1.6.7 2.2.7 3 .6a2.6 2.6 0 0 0 1.7-1.2 2.1 2.1 0 0 0 .1-1.2c0-.1-.2-.2-.4-.3z"/></svg>
-          WhatsApp</a>
-        <button class="btn ghost" id="copyBtn" type="button">Copiar</button>
-        ${navigator.share ? `<button class="btn ghost" id="moreBtn" type="button">Outras apps</button>` : ""}
-      </div>` : ""}`;
-  }
-  m.querySelector(".modal").innerHTML = `${closeBtn}
+  m.innerHTML = `<button class="icon-btn close" aria-label="Fechar" type="button">${closeSvg}</button>
     <div class="prof-head"><h2>${esc(p.username)}</h2><small>A jogar desde ${since}</small></div>
-    ${p.me ? todayHtml + "<h3>Estatísticas</h3>" : "<h3>Estatísticas</h3>"}
+    <h3>Estatísticas</h3>
     ${statsBlock(p)}
+    ${speedBlock(sp)}
+    ${achBlock(p)}
+    <h3>Histórico</h3>
+    <div id="hist"></div>
     <div class="prof-actions">
-      ${p.me ? `<button class="btn ghost" id="renameBtn" type="button">Mudar nome</button><button class="btn ghost" id="outBtn" type="button">Sair</button>`
-             : `<button class="btn ghost" id="backRank" type="button">← Rankings</button>`}
+      ${p.me ? (daily && daily.games.some(x => x.status !== "playing") ? `<button class="btn primary" id="pToday" type="button">Resultados de hoje</button>` : "") + `<button class="btn ghost" id="pSet" type="button">Definições</button><button class="btn ghost" id="pOut" type="button">Sair</button>`
+             : `<button class="btn ghost" id="pRank" type="button">← Rankings</button>`}
     </div>`;
   m.querySelector(".close").onclick = closeModals;
-  m.querySelectorAll("[data-go]").forEach(b => b.onclick = () => { slot = +b.dataset.go; resetCur(); closeModals(); renderAll(); });
-  const nb = m.querySelector("#nextBtn"); if (nb) nb.onclick = () => { slot = games.findIndex(x => x.status === "playing"); resetCur(); closeModals(); renderAll(); };
-  const cb = m.querySelector("#copyBtn"); if (cb) cb.onclick = copyResults;
-  const mb = m.querySelector("#moreBtn"); if (mb) mb.onclick = systemShare;
-  const rb = m.querySelector("#renameBtn"); if (rb) rb.onclick = () => { closeModals(); showName("", me.username); };
-  const ob = m.querySelector("#outBtn"); if (ob) ob.onclick = logout;
-  const br = m.querySelector("#backRank"); if (br) br.onclick = () => showRanking(lastPeriod);
-  clearInterval(timer);
-  if (p.me) timer = setInterval(() => { const c = $("#cd"); if (c) c.textContent = countdownText(); }, 1000);
+  const pt = $("#pToday"); if (pt) pt.onclick = () => {
+    if (mode !== "daily") setMode("daily");
+    if (daily.games[slot].status === "playing") slot = daily.games.findIndex(x => x.status !== "playing");
+    resetCur(); renderAll(); showDayResult();
+  };
+  const ps = $("#pSet"); if (ps) ps.onclick = showSettings;
+  const po = $("#pOut"); if (po) po.onclick = logout;
+  const pr = $("#pRank"); if (pr) pr.onclick = () => showRanking();
+  loadHistory(m, username, null);
 }
 
 /* ranking */
-let lastPeriod = "day";
-async function showRanking(period){
-  lastPeriod = period = period || lastPeriod;
-  closeModals();
-  const m = $("#rankModal");
-  const tabs = [["day", "Hoje"], ["week", "Semana"], ["all", "Sempre"]];
-  m.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="rT">${closeBtn}
-    <h3 id="rT">Rankings</h3>
-    <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button class="tab${k === period ? " on" : ""}" role="tab" aria-selected="${k === period}" data-p="${k}" type="button">${l}</button>`).join("")}</div>
+let lastCat = "points", lastPer = "day";
+async function showRanking(arg){
+  if (arg === "timed" || arg === "points" || arg === "speed") lastCat = arg;
+  else if (arg) lastPer = arg;
+  const cat = lastCat, per = lastPer;
+  const period = cat === "timed" ? "timed" : cat === "speed" ? "speed_" + per : per;
+  const cats = [["points", "Pontos"], ["speed", "Rapidez"], ["timed", "Contra-relógio"]];
+  const pers = [["day", "Hoje"], ["week", "Semana"], ["month", "Mês"], ["all", "Sempre"]];
+  const weekNote = per === "week" ? "Semana de segunda a domingo. " : "";
+  const note = cat === "timed" ? "Melhor número de palavras acertadas em 3 minutos."
+    : cat === "speed" ? `Tempo médio das vitórias, da 1.ª à última tentativa. ${weekNote}Jogos com mais de 30 minutos e jogos importados não contam.`
+    : `${weekNote}Pontos: 6 por acertar à 1.ª tentativa, 5 à 2.ª … 1 à 6.ª, +1 em modo difícil. Em caso de empate, conta quem ganhou mais jogos e depois o tempo médio.`;
+  const m = openModal(`<h3>Rankings</h3>
+    <div class="tabs seg" role="tablist">${cats.map(([k, l]) => `<button class="tab${k === cat ? " on" : ""}" role="tab" aria-selected="${k === cat}" data-c="${k}" type="button">${l}</button>`).join("")}</div>
+    ${cat !== "timed" ? `<div class="tabs" role="tablist">${pers.map(([k, l]) => `<button class="tab${k === per ? " on" : ""}" role="tab" aria-selected="${k === per}" data-p="${k}" type="button">${l}</button>`).join("")}</div>` : ""}
     <div id="lbBody"><p class="loading">A carregar…</p></div>
-    <p class="note">${period === "week" ? "Semana de segunda a domingo. " : ""}Pontos: 6 por acertar à 1.ª tentativa, 5 à 2.ª … 1 à 6.ª. Em caso de empate, conta quem ganhou mais jogos.</p></div>`;
-  m.querySelector(".close").onclick = closeModals;
-  m.querySelectorAll(".tab").forEach(t => t.onclick = () => showRanking(t.dataset.p));
-  openModal(m);
+    <p class="note">${esc(note)}</p>`);
+  m.querySelectorAll("[data-c]").forEach(t => t.onclick = () => showRanking(t.dataset.c));
+  m.querySelectorAll("[data-p]").forEach(t => t.onclick = () => showRanking(t.dataset.p));
   let r;
   try{ r = await rpc("leaderboard", { p_period: period }); }
-  catch(e){ $("#lbBody").innerHTML = `<p class="empty">${esc(errMsg(e))}</p>`; return; }
-  const row = x => `<div class="lbrow${x.me ? " me" : ""}"><span class="pos">${x.pos}</span><button class="nm" type="button" data-u="${esc(x.username)}">${esc(x.username)}${x.me ? " (tu)" : ""}</button><span class="wl">${x.wins}/${x.played}</span><span class="pts">${x.points}</span></div>`;
-  if (!r.top.length){ $("#lbBody").innerHTML = `<p class="empty">${period === "day" ? "Ainda ninguém terminou um jogo hoje. Sê o primeiro!" : "Ainda não há resultados."}</p>`; return; }
+  catch(e){ const b = $("#lbBody"); if (b) b.innerHTML = `<p class="empty">${esc(errMsg(e))}</p>`; return; }
+  const body = $("#lbBody"); if (!body) return;
+  const cols = {
+    points: { h: ["Ganhos", "Pontos"], a: x => `${x.wins}/${x.played}`, b: x => x.points },
+    speed:  { h: ["Vitórias", "Tempo"], a: x => x.wins, b: x => fmtT(x.avg_seconds) },
+    timed:  { h: ["Jogos", "Melhor"], a: x => x.played, b: x => x.points }
+  }[cat];
+  const vit = n => `${n} ${n === 1 ? "vitória cronometrada" : "vitórias cronometradas"}`;
+  const row = x => `<div class="lbrow${x.me ? " me" : ""}"><span class="pos">${x.pos == null ? "–" : x.pos}</span><button class="nm" type="button" data-u="${esc(x.username)}">${esc(x.username)}${x.me ? " (tu)" : ""}</button><span class="wl">${cols.a(x)}</span><span class="pts">${cols.b(x)}</span></div>`;
+  const empty = cat === "timed" ? "Ainda ninguém jogou contra-relógio."
+    : cat === "speed" ? `Ainda ninguém tem ${vit(r.min_wins)} neste período.`
+    : per === "day" ? "Ainda ninguém terminou um jogo hoje. Sê o primeiro!" : "Ainda não há resultados.";
   const inTop = r.top.some(x => x.me);
-  $("#lbBody").innerHTML = `<div class="lb">
-      <div class="lbrow lbhead"><span class="pos">#</span><span class="nm">Jogador</span><span class="wl">Ganhos</span><span class="pts">Pontos</span></div>
+  let meNote = "";
+  if (cat === "speed" && r.me && r.me.pos == null) meNote = `Tens ${vit(r.me.wins)}; precisas de ${r.min_wins} neste período para entrar.`;
+  else if (!r.me) meNote = cat === "timed" ? "Joga um contra-relógio para entrares neste ranking."
+    : cat === "speed" ? `Precisas de ${vit(r.min_wins)} neste período para entrar.` : "Termina um jogo para entrares neste ranking.";
+  body.innerHTML = (r.top.length ? `<div class="lb">
+      <div class="lbrow lbhead"><span class="pos">#</span><span class="nm">Jogador</span><span class="wl">${cols.h[0]}</span><span class="pts">${cols.h[1]}</span></div>
       ${r.top.map(row).join("")}</div>
-    ${!inTop && r.me ? `<div class="lb lbmine">${row(r.me)}</div>` : ""}
-    ${!r.me ? `<p class="note">Termina um jogo para entrares neste ranking.</p>` : ""}`;
-  $("#lbBody").querySelectorAll(".nm[data-u]").forEach(b => b.onclick = () => { closeModals(); showProfile(b.dataset.u); });
+    ${!inTop && r.me && r.me.pos != null ? `<div class="lb lbmine">${row(r.me)}</div>` : ""}` : `<p class="empty">${esc(empty)}</p>`)
+    + (meNote ? `<p class="note">${esc(meNote)}</p>` : "");
+  body.querySelectorAll(".nm[data-u]").forEach(b => b.onclick = () => showProfile(b.dataset.u));
+}
+
+/* archive */
+function showArchive(){
+  const today = daily ? daily.today : 0;
+  const days = []; for (let d = today - 1; d >= 0; d--) days.push(d);
+  const m = openModal(`<h2>Arquivo</h2>
+    <p>Joga os dias anteriores. Não contam para o ranking nem para as tuas séries.</p>
+    ${days.length ? `<div class="days">${days.map(d => `<button class="dayrow" data-d="${d}" type="button">${esc(dayDate(d, { weekday: "long", day: "numeric", month: "long" }))}<span>#${d + 1}</span></button>`).join("")}</div>`
+                  : `<p class="empty">Ainda não há dias anteriores. O arquivo começa amanhã!</p>`}`);
+  m.querySelectorAll("[data-d]").forEach(b => b.onclick = () => openArchiveDay(+b.dataset.d));
+}
+
+/* admin */
+async function showAdmin(){
+  const m = openModal(`<p class="loading">A carregar…</p>`);
+  let r;
+  try{ r = await rpc("admin_overview"); }catch(e){ m.querySelector(".loading").textContent = errMsg(e); return; }
+  if (modal.hidden) return;
+  const maxP = Math.max(1, ...r.days.map(d => d.players));
+  m.innerHTML = `<button class="icon-btn close" aria-label="Fechar" type="button">${closeSvg}</button>
+    <h2>Administração</h2>
+    <div class="kpis">
+      <div><b>${r.players}</b><span>Jogadores</span></div>
+      <div><b>${r.new_7d}</b><span>Novos (7 dias)</span></div>
+      <div><b>${r.active_today}</b><span>Ativos hoje</span></div>
+      <div><b>${r.practice_7d}</b><span>Treinos (7 dias)</span></div>
+    </div>
+    <h3>Jogadores por dia</h3>
+    <div class="bars">${r.days.map(d => `<div style="height:${Math.round(100 * d.players / maxP)}%" title="${d.players} jogadores, ${d.games} jogos"><span>${d.players}</span></div>`).join("")}</div>
+    <div class="barlbl">${r.days.map(d => `<span>${new Date(START + d.day * 864e5).getUTCDate()}</span>`).join("")}</div>
+    <h3>Palavras mais difíceis (14 dias)</h3>
+    ${r.hardest.length ? `<div class="tblwrap"><table class="tbl"><thead><tr><th>Palavra</th><th>Dia</th><th>Jog.</th><th>Acertos</th><th>Média</th></tr></thead><tbody>
+      ${r.hardest.map(h => `<tr><td><b>${esc(h.word)}</b></td><td>${esc(dayDate(h.day, { day: "numeric", month: "short" }))} · ${h.slot + 1}</td><td>${h.players}</td><td>${h.win_rate}%</td><td>${h.avg != null ? String(h.avg).replace(".", ",") : "–"}</td></tr>`).join("")}
+    </tbody></table></div>` : `<p class="empty">Ainda sem dados.</p>`}
+    <h3>Palavras sugeridas</h3>
+    <div id="suggs">${r.suggestions.length ? r.suggestions.map(s => `<div class="sugg" data-n="${esc(s.norm)}">
+        <input class="inp" value="${esc(s.norm)}" maxlength="5" aria-label="Grafia de ${esc(s.norm)}">
+        <small>${s.count}× · ${esc(s.by || "?")}</small>
+        <button class="btn primary small" data-ok type="button">Aceitar</button><button class="btn ghost small" data-no type="button">Recusar</button></div>`).join("")
+      : `<p class="empty">Não há sugestões pendentes.</p>`}</div>
+    <p class="note">Ao aceitar, podes corrigir a grafia com acentos (por exemplo, MACA → MAÇÃ).</p>
+    <h3>Procurar jogadores</h3>
+    <form class="row2" id="uForm"><input class="inp" id="uQ" placeholder="Nome ou email" aria-label="Nome ou email"><button class="btn ghost small" type="submit">Procurar</button></form>
+    <div id="uRes"></div>
+    <p class="note">Para apagar uma conta: no Supabase, Authentication → Users, procura o email e escolhe Delete user. Os jogos dessa pessoa são apagados com a conta.</p>`;
+  m.querySelector(".close").onclick = closeModals;
+  m.querySelectorAll(".sugg").forEach(row => {
+    const n = row.dataset.n;
+    const act = async ok => {
+      row.querySelectorAll("button").forEach(b => b.disabled = true);
+      try{
+        await rpc("admin_review_suggestion", { p_norm: n, p_accept: ok, p_display: row.querySelector(".inp").value.trim().toUpperCase() });
+        const disp = row.querySelector(".inp").value.trim().toUpperCase() || n;
+        row.innerHTML = `<small>${esc(disp)}: ${ok ? "aceite" : "recusada"}</small>`;
+        if (ok){ DICT.add(n); if (disp !== n) DICTW.acc[n] = disp; }
+      }catch(e){ toast(errMsg(e)); row.querySelectorAll("button").forEach(b => b.disabled = false); }
+    };
+    row.querySelector("[data-ok]").onclick = () => act(true);
+    row.querySelector("[data-no]").onclick = () => act(false);
+  });
+  $("#uForm").onsubmit = async e => {
+    e.preventDefault();
+    const box = $("#uRes"); box.innerHTML = `<p class="loading">A procurar…</p>`;
+    try{
+      const us = await rpc("admin_find_users", { p_query: $("#uQ").value });
+      box.innerHTML = us.length ? `<div class="tblwrap"><table class="tbl"><thead><tr><th>Nome</th><th>Email</th><th>Jogos</th><th>Desde</th></tr></thead><tbody>
+        ${us.map(u => `<tr><td><b>${esc(u.username)}</b>${u.is_admin ? " (admin)" : ""}</td><td>${esc(u.email)}</td><td>${u.games}</td><td>${esc(new Date(u.created_at).toLocaleDateString("pt-PT"))}</td></tr>`).join("")}
+      </tbody></table></div>` : `<p class="empty">Ninguém encontrado.</p>`;
+    }catch(err){ box.innerHTML = `<p class="empty">${esc(errMsg(err))}</p>`; }
+  };
 }
 
 /* ---------- input ---------- */
-function rowEl(){ return board.children[game().rows.length]; }
-function shake(){ const r = rowEl(); if (!r) return; r.classList.remove("shake"); void r.offsetWidth; r.classList.add("shake"); setTimeout(() => r.classList.remove("shake"), 520); }
+function activeRowEls(){
+  const v = view(); if (!v) return [];
+  return [...boardsEl.children].map((el, bi) => (!v.boards[bi].solved && el.children[v.boards[bi].rows.length]) || null).filter(Boolean);
+}
+function shake(){ activeRowEls().forEach(r => { r.classList.remove("shake"); void r.offsetWidth; r.classList.add("shake"); setTimeout(() => r.classList.remove("shake"), 520); }); }
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+function hardMsg(rows, guess){
+  const need = {};
+  for (const r of rows){
+    const w = norm(r.word), cnt = {};
+    for (let i = 0; i < LEN; i++){
+      if (r.colors[i] === "correct" && guess[i] !== w[i]) return `A ${i + 1}.ª letra tem de ser ${w[i]}`;
+      if (r.colors[i] !== "absent") cnt[w[i]] = (cnt[w[i]] || 0) + 1;
+    }
+    for (const k in cnt) need[k] = Math.max(need[k] || 0, cnt[k]);
+  }
+  for (const k in need){ if ([...guess].filter(c => c === k).length < need[k]) return `A tentativa tem de ter a letra ${k}`; }
+  return null;
+}
+
 function press(k){
-  if (!started || busy || anyModalOpen()) return;
-  const g = game(); if (!g || g.status !== "playing") return;
-  if (k === "BACK"){ if (cur[pos]) cur[pos] = ""; else if (pos > 0){ pos--; cur[pos] = ""; } renderBoard(); return; }
-  if (k === "LEFT"){ if (pos > 0) pos--; renderBoard(); return; }
-  if (k === "RIGHT"){ if (pos < LEN - 1) pos++; renderBoard(); return; }
+  if (!started || busy || anyOverlay()) return;
+  const v = view(); if (!v || !v.playing) return;
+  if (mode === "timed" && (!prac || prac.status !== "playing")) return;
+  if (k === "BACK"){ if (cur[pos]) cur[pos] = ""; else if (pos > 0){ pos--; cur[pos] = ""; } renderBoards(); return; }
+  if (k === "LEFT"){ if (pos > 0) pos--; renderBoards(); return; }
+  if (k === "RIGHT"){ if (pos < LEN - 1) pos++; renderBoards(); return; }
   if (k === "ENTER"){ submit(); return; }
   if (/^[A-Z]$/.test(k) && !"KWY".includes(k)){
     cur[pos] = k;
     let nx = -1; for (let i = pos + 1; i < LEN; i++) if (!cur[i]){ nx = i; break; }
     pos = nx >= 0 ? nx : Math.min(pos + 1, LEN - 1);
-    renderBoard();
+    renderBoards();
   }
 }
-async function submit(){
-  const g = game();
-  if (cur.some(c => !c)){ toast("Faltam letras"); shake(); return; }
-  const word = cur.join("");
-  if (!DICT.has(word)){ toast("Palavra não aceite"); shake(); return; }
-  const r = g.rows.length, tiles = [...board.children[r].children], mySlot = slot;
-  busy = true; renderBoard();
-  let res;
-  try{ res = await rpc("submit_guess", { p_slot: mySlot, p_guess: word }); }
-  catch(e){
-    busy = false;
-    const m = (e && e.message) || "";
-    if (/invalid_word/.test(m)){ toast("Palavra não aceite"); shake(); renderBoard(); return; }
-    if (/game_over/.test(m)){ await loadToday(); renderAll(); return; }
-    if (/not_authenticated|JWT/i.test(m)){ toast("A tua sessão terminou. Entra outra vez."); logout(); return; }
-    toast(errMsg(e)); renderBoard(); return;
-  }
-  if (res.day !== day){ toast("Começou um dia novo!"); await loadToday(); slot = firstOpenSlot(); resetCur(); busy = false; renderAll(); return; }
-  games[mySlot] = { slot: mySlot, status: res.status, rows: res.rows, answer: res.answer };
-  resetCur();
-  const last = res.rows[res.rows.length - 1], shown = [...last.word], ev = last.colors;
-  const won = res.status === "won", lost = res.status === "lost";
-  const step = reduced() ? 0 : 300;
-  tiles.forEach((t, i) => {
-    setTimeout(() => {
+function rejectWord(word){
+  shake();
+  toast("Palavra não aceite", 1600, { label: "Sugerir", fn: async () => {
+    try{ const r = await rpc("suggest_word", { p_word: word }); toast(r.status === "exists" ? "Essa palavra já foi aceite. Recarrega a página." : "Obrigado! Vamos analisar a sugestão."); }
+    catch(e){ toast(errMsg(e)); }
+  } });
+}
+function animateRows(rowEls, evs, words, done){
+  const step = reduced() ? 0 : 280;
+  rowEls.forEach((rowEl, bi) => {
+    const tiles = [...rowEl.children], ev = evs[bi], shown = [...words[bi]];
+    tiles.forEach((t, i) => setTimeout(() => {
       if (!step){ t.className = "tile " + ev[i]; t.textContent = shown[i]; return; }
       t.classList.add("flip-in");
       setTimeout(() => { t.className = "tile flip-out " + ev[i]; t.textContent = shown[i]; }, 250);
-    }, i * step);
+    }, i * step));
   });
-  setTimeout(() => {
-    busy = false; renderPicker(); renderKeyboard(); if (!won && !lost) renderBoard();
+  setTimeout(done, LEN * step + (step ? 300 : 0));
+}
+async function submit(){
+  const v = view();
+  if (cur.some(c => !c)){ toast("Faltam letras"); shake(); return; }
+  const word = cur.join("");
+  if (!DICT.has(word)){ rejectWord(word); return; }
+  if (isDayMode() && hardActive()){
+    const msg = hardMsg(curGame().rows, word); if (msg){ toast(msg); shake(); return; }
+  }
+  const rowEls = activeRowEls();
+  busy = true; renderBoards();
+  try{
+    if (isDayMode()) await submitDay(word, rowEls);
+    else await submitPractice(word, rowEls);
+  }catch(e){
+    busy = false;
+    const m = (e && e.message) || "";
+    if (/invalid_word/.test(m)){ renderBoards(); rejectWord(word); return; }
+    if (/hard_mode: /.test(m)){ toast(m.replace(/^.*hard_mode: /, "")); shake(); renderBoards(); return; }
+    if (/game_over/.test(m)){ if (isDayMode()) await reloadDayMode(); renderAll(); return; }
+    if (/not_authenticated|JWT/i.test(m)){ toast("A tua sessão terminou. Entra outra vez."); logout(); return; }
+    toast(errMsg(e)); renderBoards();
+  }
+}
+async function reloadDayMode(){
+  if (mode === "archive") archive = await rpc("get_day", { p_day: archive.day });
+  else await loadDaily();
+}
+async function submitDay(word, rowEls){
+  const isArch = mode === "archive", d = dayData(), s = curSlot(), g = d.games[s];
+  const res = await rpc("play_guess", { p_slot: s, p_guess: word, p_day: isArch ? d.day : null, p_hard: g.rows.length ? !!g.hard : !!me.hard_mode });
+  if (!isArch && res.day !== d.day){ toast("Começou um dia novo!"); await loadDaily(); slot = firstOpen(daily.games); resetCur(); busy = false; renderAll(); return; }
+  d.games[s] = { slot: s, status: res.status, rows: res.rows, answer: res.answer, hard: res.hard, archive: res.archive, seconds: res.seconds };
+  resetCur();
+  const last = res.rows[res.rows.length - 1];
+  const won = res.status === "won", lost = res.status === "lost";
+  animateRows(rowEls, [last.colors], [last.word], () => {
+    busy = false; renderBar(); renderKeyboard(); if (!won && !lost) renderBoards();
     if (won){
-      const msgs = ["Génio!", "Magnífico!", "Impressionante!", "Esplêndido!", "Boa!", "Ufa!"];
-      toast(msgs[res.rows.length - 1], 1800);
-      if (!reduced()) tiles.forEach((t, i) => setTimeout(() => t.classList.add("bounce"), i * 100));
-      setTimeout(() => showProfile(), 1900);
-    } else if (lost){
-      toast(res.answer || "", 2200); setTimeout(() => showProfile(), 2300);
+      toast(["Génio!", "Magnífico!", "Impressionante!", "Esplêndido!", "Boa!", "Ufa!"][res.rows.length - 1], 1800);
+      if (!reduced()) [...rowEls[0].children].forEach((t, i) => setTimeout(() => t.classList.add("bounce"), i * 100));
+    } else if (lost) toast(res.answer || "", 2200);
+    if (won || lost){
+      setTimeout(() => {
+        if (mode === "daily" && !isArch) showDayResult();
+        else if (mode === "archive"){ const nx = archive.games.findIndex(x => x.status === "playing"); if (nx >= 0){ archSlot = nx; resetCur(); renderAll(); } else toast("Terminaste este dia do arquivo", 2500); }
+      }, won ? 1900 : 2300);
     }
-  }, LEN * step + (step ? 300 : 0));
+  });
+}
+async function submitPractice(word, rowEls){
+  const before = prac;
+  const res = await rpc("practice_guess", { p_id: before.id, p_guess: word });
+  if (res.time_over){ prac = res; busy = false; endTimed(); return; }
+  resetCur();
+  if (prac.mode === "timed"){
+    const last = res.last;
+    if (last){
+      const lr = last.rows[last.rows.length - 1];
+      animateRows(rowEls, [lr.colors], [lr.word], () => {
+        prac = res; busy = false; builtShape = "";
+        toast(last.solved ? `✓ ${last.answer}` : `Era ${last.answer}`, 1400);
+        renderAll(); boardsEl.classList.remove("flash"); void boardsEl.offsetWidth; boardsEl.classList.add("flash");
+        if (Date.now() >= pracEnds) endTimed();
+      });
+      return;
+    }
+  }
+  const evs = [], words = [];
+  const targets = [];
+  before.boards.forEach((b, bi) => { if (!b.solved){ const rr = res.boards[bi].rows; const lr = rr[rr.length - 1]; evs.push(lr.colors); words.push(lr.word); targets.push(bi); } });
+  animateRows(rowEls, evs, words, () => {
+    prac = res; busy = false; renderAll();
+    if (prac.mode === "timed"){ if (Date.now() >= pracEnds) endTimed(); return; }
+    if (res.status === "won" || res.status === "lost") setTimeout(showPracticeEnd, res.status === "won" ? 900 : 1300);
+  });
+}
+function showPracticeEnd(){
+  const p = prac, won = p.status === "won";
+  const words = p.boards.map(b => b.answer).filter(Boolean);
+  const sq = sqMap();
+  const grid = p.boards.length === 1 ? p.boards[0].rows.map(r => r.colors.map(c => sq[c]).join("")).join("\n") : p.boards.map((b, i) => `${b.solved ? "✅" : "❌"} ${b.rows.length}/${p.max}`).join("  ");
+  const txt = `Palavrle · ${MODES[p.mode].name} · ${won ? (p.boards.length === 1 ? p.boards[0].rows.length + "/6" : p.guesses + "/" + p.max) : "X"}\n\n${grid}\n\n${siteUrl()}`;
+  const m = openModal(`<h2>${won ? "Acertaste!" : "Desta vez não deu"}</h2>
+    <div class="result">${p.boards.length > 1 ? "As palavras eram" : "A palavra era"}<br><span class="word">${words.map(esc).join(" · ")}</span></div>
+    <div class="center"><button class="btn primary" id="pAgain" type="button">Jogar outra vez</button><button class="btn ghost" id="pDaily" type="button">Jogo do dia</button></div>
+    <h3>Partilhar</h3>${shareButtons(txt)}`);
+  wireShare(m, txt);
+  $("#pAgain").onclick = newPractice;
+  $("#pDaily").onclick = () => setMode("daily");
 }
 
 document.addEventListener("keydown", e => {
-  if (e.key === "Escape"){ closeModals(); return; }
+  if (e.key === "Escape"){ closeModals(); closeMenu(); return; }
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   const tag = e.target && e.target.tagName;
   if (tag === "INPUT" || tag === "TEXTAREA") return;
-  if (e.key === "Enter"){ if (document.activeElement && document.activeElement.tagName === "BUTTON") return; e.preventDefault(); press("ENTER"); return; }
+  if (e.key === "Enter"){
+    const a = document.activeElement;
+    if (a && a.tagName === "BUTTON" && anyOverlay()) return;
+    if (a && a.tagName === "BUTTON") a.blur();
+    e.preventDefault(); press("ENTER"); return;
+  }
   if (e.key === "Backspace" || e.key === "Delete"){ e.preventDefault(); press("BACK"); return; }
   if (e.key === "ArrowLeft"){ e.preventDefault(); press("LEFT"); return; }
   if (e.key === "ArrowRight"){ e.preventDefault(); press("RIGHT"); return; }
   if (e.key.length === 1){ const k = norm(e.key); if (/^[A-Z]$/.test(k)) press(k); }
 });
-board.addEventListener("click", e => {
-  const t = e.target.closest(".tile.active"); if (!t || busy || !game() || game().status !== "playing") return;
-  pos = +t.dataset.i; renderBoard();
+boardsEl.addEventListener("click", e => {
+  const t = e.target.closest(".tile.active"); if (!t || busy) return;
+  pos = +t.dataset.i; renderBoards();
 });
+$("#menuBtn").onclick = openMenu;
 $("#helpBtn").onclick = showHelp;
 $("#rankBtn").onclick = () => showRanking();
 $("#profBtn").onclick = () => showProfile();
+$("#homeTitle").onclick = () => setMode("daily");
 addEventListener("resize", fit);
+addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; });
 
-/* new day: refresh when the countdown ends or when the app comes back to the foreground */
-setInterval(async () => {
+/* new day: refresh when the countdown ends or when the app comes back */
+async function refreshDay(){
   if (!started || busy) return;
-  if (secondsLeft - Math.floor((Date.now() - loadedAt) / 1000) <= 0){
-    try{ const old = day; await loadToday(); if (day !== old){ slot = 0; resetCur(); closeModals(); renderAll(); toast("Há palavras novas!"); } }catch(e){}
-  }
-}, 5000);
-document.addEventListener("visibilitychange", async () => {
-  if (document.visibilityState !== "visible" || !started || busy) return;
-  try{ const old = day; await loadToday(); if (day !== old){ slot = firstOpenSlot(); resetCur(); closeModals(); } renderAll(); }catch(e){}
+  try{
+    const old = daily.day; await loadDaily();
+    if (daily.day !== old){ if (mode === "daily"){ resetCur(); builtShape = ""; renderAll(); } toast("Há palavras novas!"); }
+  }catch(e){}
+}
+setInterval(() => { if (started && secsLeftToday() <= 0) refreshDay(); }, 5000);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible" || !started) return;
+  refreshDay();
+  if (mode === "timed" && prac && prac.status === "playing" && Date.now() >= pracEnds) endTimed();
 });
 
 /* ---------- boot ---------- */
-buildBoard(); buildKeyboard(); fit();
-sb.auth.onAuthStateChange((event, session) => {
+if (store.get("palavrle-cb")) document.body.classList.add("cb");
+buildKeyboard();
+sb.auth.onAuthStateChange((event) => {
   if (event === "PASSWORD_RECOVERY"){ recovering = true; setTimeout(showRecovery, 0); return; }
   if (event === "SIGNED_IN" && !started) setTimeout(afterLogin, 0);
 });
