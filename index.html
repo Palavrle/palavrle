@@ -57,6 +57,8 @@ header h1{margin:0;font-family:var(--f-title);font-weight:700;font-size:30px;let
 .tile{display:flex;align-items:center;justify-content:center;border:2px solid var(--line);font-weight:700;
   font-size:calc(var(--bw,330px)*.1);text-transform:uppercase;line-height:1;user-select:none;box-sizing:border-box}
 .tile.filled{border-color:var(--line-strong);animation:pop .1s ease-out}
+.tile.active{cursor:pointer}
+.tile.cursor{border-color:var(--line-strong);box-shadow:inset 0 -5px 0 var(--fg)}
 .tile.correct,.tile.present,.tile.absent{color:var(--on-color);border-color:transparent}
 .tile.correct{background:var(--correct)} .tile.present{background:var(--present)} .tile.absent{background:var(--absent)}
 .tile.flip-in{animation:flipIn .25s ease-in forwards}
@@ -172,10 +174,14 @@ function solutionFor(day,slot){ const n=SOL.length; const i=(((day*GAMES_PER_DAY
 /* ---------- state ---------- */
 function blankStats(){ return {played:0,wins:0,dist:[0,0,0,0,0,0],curWin:0,maxWin:0,lastDay:null,dayStreak:0,maxDayStreak:0}; }
 let save = {stats:blankStats(), day:null, games:[], updatedAt:0};
-let day = todayNum(), slot = 0, cur = "", busy = false;
+let day = todayNum(), slot = 0, cur = Array(5).fill(""), pos = 0, busy = false;
+function resetCur(){ cur=Array(LEN).fill(""); pos=0; }
 
 function ensureDay(){
-  if(save.day!==day){ save.day=day; save.games=Array.from({length:GAMES_PER_DAY},()=>({guesses:[],status:"playing"})); }
+  if(save.day!==day){
+    save.history=save.history||{};
+    if(save.day!=null&&save.games&&save.games.some(g=>g.status!=="playing")) save.history[save.day]=save.games;
+    save.day=day; save.games=Array.from({length:GAMES_PER_DAY},()=>({guesses:[],status:"playing"})); }
 }
 function loadLocal(){
   try{ const raw=localStorage.getItem(STORE_KEY); if(raw){ const s=JSON.parse(raw); if(s&&s.stats) save=s; } }catch(e){}
@@ -207,7 +213,7 @@ async function connectRemote(){
       let remote=null; try{ remote=JSON.parse(snap.data().json); }catch(e){}
       if(remote&&remote.stats&&(remote.updatedAt||0)>(save.updatedAt||0)&&!busy){
         save=remote; ensureDay(); try{ localStorage.setItem(STORE_KEY,JSON.stringify(save)); }catch(e){}
-        cur=""; slot=firstOpenSlot(); renderAll(); return;
+        resetCur(); slot=firstOpenSlot(); renderAll(); return;
       }
     }
     if(save.updatedAt) syncRemote();
@@ -244,7 +250,7 @@ function renderBoard(){
       const n=g.guesses[r], shown=[...display(n)], ev=evaluate(n,ans);
       tiles.forEach((t,i)=>{ t.className="tile "+ev[i]; t.textContent=shown[i]; });
     }else if(r===g.guesses.length&&g.status==="playing"){
-      tiles.forEach((t,i)=>{ const ch=cur[i]||""; t.className="tile"+(ch?" filled":""); t.textContent=ch; });
+      tiles.forEach((t,i)=>{ const ch=cur[i]||""; t.className="tile active"+(ch?" filled":"")+(i===pos&&!busy?" cursor":""); t.textContent=ch; t.dataset.i=i; });
     }else tiles.forEach(t=>{ t.className="tile"; t.textContent=""; });
   });
 }
@@ -281,7 +287,7 @@ function renderPicker(){
     if(g.status!=="playing") b.classList.add(g.status);
     if(i===slot) b.classList.add("on");
     b.setAttribute("aria-label",`Jogo ${i+1}`+(g.status==="won"?", ganho":g.status==="lost"?", perdido":""));
-    b.addEventListener("click",()=>{ if(busy) return; slot=i; cur=""; renderAll(); b.blur(); });
+    b.addEventListener("click",()=>{ if(busy) return; slot=i; resetCur(); renderAll(); b.blur(); });
     picker.appendChild(b);
   });
 }
@@ -310,7 +316,8 @@ function showHelp(){
   <h2 id="hT">Como jogar</h2>
   <p>Adivinha a palavra em 6 tentativas.</p>
   <ul><li>Cada tentativa tem de ser uma palavra válida de 5 letras.</li>
-  <li>A cor das peças mostra se estiveste perto.</li></ul>
+  <li>A cor das peças mostra se estiveste perto.</li>
+  <li>Toca num quadrado da linha para escrever nessa posição. Assim podes pôr primeiro as letras que já sabes.</li></ul>
   <p><b>Exemplos</b></p>
   ${exRow("PRAIA",0,"correct")}<p><b>P</b> está na palavra e no sítio certo.</p>
   ${exRow("LIVRO",1,"present")}<p><b>I</b> está na palavra, mas noutro sítio.</p>
@@ -401,8 +408,8 @@ function showStats(){
     </div>`:""}
     <p class="note">As estatísticas ficam guardadas neste dispositivo.</p></div>`;
   m.querySelector(".close").onclick=closeModals;
-  m.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{ slot=+b.dataset.go; cur=""; closeModals(); renderAll(); });
-  const nb=m.querySelector("#nextBtn"); if(nb) nb.onclick=()=>{ slot=nextOpen; cur=""; closeModals(); renderAll(); };
+  m.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{ slot=+b.dataset.go; resetCur(); closeModals(); renderAll(); });
+  const nb=m.querySelector("#nextBtn"); if(nb) nb.onclick=()=>{ slot=nextOpen; resetCur(); closeModals(); renderAll(); };
   const cb=m.querySelector("#copyBtn"); if(cb) cb.onclick=copyResults;
   const mb=m.querySelector("#moreBtn"); if(mb) mb.onclick=systemShare;
   clearInterval(timer); timer=setInterval(()=>{ const c=$("#cd"); if(c) c.textContent=countdown(); if(todayNum()!==day) location.reload(); },1000);
@@ -418,16 +425,24 @@ function press(k){
   if(busy||!$("#helpModal").hidden||!$("#statsModal").hidden) return;
   const g=game(); if(g.status!=="playing") return;
   if(todayNum()!==day){ location.reload(); return; }
-  if(k==="BACK"){ cur=cur.slice(0,-1); renderBoard(); return; }
+  if(k==="BACK"){ if(cur[pos]) cur[pos]=""; else if(pos>0){ pos--; cur[pos]=""; } renderBoard(); return; }
+  if(k==="LEFT"){ if(pos>0) pos--; renderBoard(); return; }
+  if(k==="RIGHT"){ if(pos<LEN-1) pos++; renderBoard(); return; }
   if(k==="ENTER"){ submit(); return; }
-  if(/^[A-Z]$/.test(k)&&!"KWY".includes(k)&&cur.length<LEN){ cur+=k; renderBoard(); }
+  if(/^[A-Z]$/.test(k)&&!"KWY".includes(k)){
+    cur[pos]=k;
+    let nx=-1; for(let i=pos+1;i<LEN;i++) if(!cur[i]){ nx=i; break; }
+    pos = nx>=0 ? nx : Math.min(pos+1,LEN-1);
+    renderBoard();
+  }
 }
 function submit(){
   const g=game();
-  if(cur.length<LEN){ toast("Faltam letras"); shake(); return; }
-  if(!DICT.has(cur)){ toast("Palavra não aceite"); shake(); return; }
-  const n=cur, ans=answer(), ev=evaluate(n,ans), shown=[...display(n)], r=g.guesses.length, tiles=[...board.children[r].children];
-  g.guesses.push(n); cur="";
+  if(cur.some(c=>!c)){ toast("Faltam letras"); shake(); return; }
+  const word=cur.join("");
+  if(!DICT.has(word)){ toast("Palavra não aceite"); shake(); return; }
+  const n=word, ans=answer(), ev=evaluate(n,ans), shown=[...display(n)], r=g.guesses.length, tiles=[...board.children[r].children];
+  g.guesses.push(n); resetCur();
   const won=n===norm(ans), lost=!won&&g.guesses.length===ROWS;
   if(won||lost) finishGame(won);
   persist();
@@ -441,7 +456,7 @@ function submit(){
     },i*step);
   });
   setTimeout(()=>{
-    busy=false; renderPicker(); renderKeyboard();
+    busy=false; renderPicker(); renderKeyboard(); if(!won&&!lost) renderBoard();
     if(won){
       const msgs=["Génio!","Magnífico!","Impressionante!","Esplêndido!","Boa!","Ufa!"];
       toast(msgs[g.guesses.length-1],1800);
@@ -454,6 +469,7 @@ function submit(){
 }
 function finishGame(won){
   const g=game(), s=save.stats; g.status=won?"won":"lost";
+  save.history=save.history||{}; save.history[day]=save.games;
   s.played++;
   if(won){ s.wins++; s.dist[g.guesses.length-1]++; s.curWin++; s.maxWin=Math.max(s.maxWin,s.curWin); }
   else s.curWin=0;
@@ -464,8 +480,14 @@ document.addEventListener("keydown",e=>{
   if(e.ctrlKey||e.metaKey||e.altKey) return;
   if(e.target&&e.target.tagName==="TEXTAREA") return;
   if(e.key==="Enter"){ if(document.activeElement&&document.activeElement.tagName==="BUTTON"&&document.activeElement.closest(".overlay,#picker,header")) return; e.preventDefault(); press("ENTER"); return; }
-  if(e.key==="Backspace"){ e.preventDefault(); press("BACK"); return; }
+  if(e.key==="Backspace"||e.key==="Delete"){ e.preventDefault(); press("BACK"); return; }
+  if(e.key==="ArrowLeft"){ e.preventDefault(); press("LEFT"); return; }
+  if(e.key==="ArrowRight"){ e.preventDefault(); press("RIGHT"); return; }
   if(e.key.length===1){ const k=norm(e.key); if(/^[A-Z]$/.test(k)) press(k); }
+});
+board.addEventListener("click",e=>{
+  const t=e.target.closest(".tile.active"); if(!t||busy||game().status!=="playing") return;
+  pos=+t.dataset.i; renderBoard();
 });
 $("#helpBtn").onclick=showHelp;
 $("#statsBtn").onclick=showStats;
