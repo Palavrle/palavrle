@@ -128,6 +128,39 @@ body[data-boards="4"] .key,body[data-boards="2"] .key{height:46px}
 .ex .tile{width:36px;height:36px;font-size:20px;animation:none}
 .ex .tile.plain{border-color:var(--line-strong)}
 
+/* home screen */
+#home{flex:1 1 auto;overflow-y:auto;padding:14px 0 calc(env(safe-area-inset-bottom,0px) + 20px)}
+body.at-home #bar,body.at-home #boardWrap,body.at-home #keyboard{display:none}
+.home-in{max-width:460px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.hello{margin:0;font-size:15px;color:var(--muted)}
+.hello b{color:var(--fg)}
+.mcard{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:14px;cursor:pointer;font-family:var(--f-ui);box-sizing:border-box}
+.mcard:hover{border-color:var(--line-strong)}
+.mcard:focus-visible{outline:2px solid var(--tp);outline-offset:2px}
+.mcard b{display:block;font-size:16px}
+.mcard small{display:block;font-size:13px;color:var(--muted);margin-top:2px;line-height:1.35}
+.mcard .ico{width:40px;height:40px;flex:none;display:grid;grid-template-columns:repeat(2,1fr);gap:3px}
+.mcard .ico i{background:var(--absent);border-radius:3px}
+.mcard .ico i.c{background:var(--tc)} .mcard .ico i.p{background:var(--tp)}
+.mcard.main{border:2px solid var(--tc);padding:18px 16px;flex-direction:column;align-items:stretch;gap:12px}
+.mcard.main .top{display:flex;align-items:center;gap:14px}
+.mcard.main b{font-family:var(--f-title);font-size:26px;letter-spacing:.02em}
+.mcard .go{margin-left:auto;font-size:22px;color:var(--muted)}
+.dots{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.dots i{width:26px;height:26px;border-radius:4px;border:2px solid var(--line);box-sizing:border-box;display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:700}
+.dots i.won{background:var(--tc);border-color:var(--tc);color:var(--on-color)}
+.dots i.lost{background:var(--absent);border-color:var(--absent);color:var(--on-color)}
+.dots i.part{border-color:var(--line-strong)}
+.dots span{font-size:13px;color:var(--muted);margin-left:6px}
+.msec{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:10px 0 -2px}
+.mgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.mgrid .mcard{flex-direction:column;align-items:flex-start;gap:10px}
+.mgrid .mcard .ico{width:32px;height:32px}
+.mgrid .mcard.wide{grid-column:span 2;flex-direction:row;align-items:center}
+.mlinks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.mlinks .btn{width:100%}
+@media (max-width:360px){.mgrid{grid-template-columns:1fr}.mgrid .mcard.wide{grid-column:auto}}
+
 /* side menu */
 #menu{position:fixed;inset:0;z-index:25;background:var(--overlay)}
 #menu .panel{position:absolute;top:0;bottom:0;left:0;width:min(300px,86vw);background:var(--card);border-right:1px solid var(--line);
@@ -288,7 +321,7 @@ body[data-boards="4"] .key,body[data-boards="2"] .key{height:46px}
 <div id="app">
   <header>
     <div class="hbtns">
-      <button class="icon-btn" id="menuBtn" aria-label="Menu"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></button>
+      <button class="icon-btn" id="menuBtn" aria-label="Início"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7zm2 2v3h3v-3h-3zM6 15v3h3v-3H6zm9-9v3h3V6h-3zM6 6v3h3V6H6z"/></svg></button>
       <button class="icon-btn" id="helpBtn" aria-label="Como jogar"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg></button>
     </div>
     <h1 id="homeTitle">Palavrle</h1>
@@ -297,6 +330,7 @@ body[data-boards="4"] .key,body[data-boards="2"] .key{height:46px}
       <button class="icon-btn" id="profBtn" aria-label="O meu perfil"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 6a2 2 0 1 1 0 4 2 2 0 0 1 0-4m0 9c2.7 0 5.8 1.29 6 2v1H6v-.99c.2-.72 3.3-2.01 6-2.01m0-11a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 9c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4z"/></svg></button>
     </div>
   </header>
+  <div id="home" hidden></div>
   <div id="bar"></div>
   <div id="boardWrap"><div id="boards" aria-label="Tabuleiro"></div></div>
   <div id="keyboard" aria-label="Teclado"></div>
@@ -543,7 +577,7 @@ async function afterLogin(){
     await importLocal();
     await Promise.all([loadDaily(), loadExtraWords()]);
     gate.hidden = true;
-    if (!started){ started = true; mode = "daily"; slot = firstOpen(daily.games); resetCur(); renderAll(); fit(); maybeFirstHelp(); }
+    if (!started){ started = true; mode = "daily"; slot = firstOpen(daily.games); resetCur(); renderAll(); showHome(); maybeFirstHelp(); }
   }catch(e){
     gate.hidden = false;
     gateIn.innerHTML = `${logoTiles}<h1>Palavrle</h1><p class="err">${esc(errMsg(e))}</p><button class="btn primary full" id="retry" type="button">Tentar outra vez</button><button class="linkbtn" id="out2" type="button">Sair</button>`;
@@ -722,14 +756,77 @@ function fit(){
   boardsEl.style.setProperty("--bgap", bgap + "px");
 }
 
+/* ---------- home ---------- */
+const homeEl = $("#home");
+let homeTick = null;
+const atHome = () => !homeEl.hidden;
+function icoBig(m){
+  const p = { daily: "cpaa", archive: "aapa", single: "caaa", duo: "cpcp", quartet: "cpap", timed: "pcpc" }[m] || "aaaa";
+  return `<span class="ico" aria-hidden="true">${[...p].map(c => `<i class="${c === "c" ? "c" : c === "p" ? "p" : ""}"></i>`).join("")}</span>`;
+}
+function renderHome(){
+  if (!daily || !me) return;
+  const gs = daily.games;
+  const done = gs.filter(g => g.status !== "playing").length, won = gs.filter(g => g.status === "won").length;
+  const status = done === 5 ? `Jogaste os 5 de hoje: ${won} ${won === 1 ? "ganho" : "ganhos"}. Novas palavras em <b id="homeCd" style="display:inline;font-size:13px;font-family:var(--f-ui)">${countdownText()}</b>`
+    : done ? `${done}/5 jogados, ${won} ${won === 1 ? "ganho" : "ganhos"}` : "5 palavras novas à tua espera";
+  const card = (m, extra) => `<button class="mcard${extra || ""}" data-m="${m}" type="button">${icoBig(m)}<span><b>${MODES[m].name}</b><small>${MODES[m].desc}</small></span></button>`;
+  homeEl.innerHTML = `<div class="home-in">
+    <p class="hello">Olá, <b>${esc(me.username)}</b> · ${esc(dayDate(daily.day, { weekday: "long", day: "numeric", month: "long" }))}</p>
+    <button class="mcard main" data-m="daily" type="button">
+      <span class="top">${icoBig("daily")}<span><b>Jogo do dia</b><small>Palavrle #${daily.day + 1} · conta para o ranking</small></span><span class="go" aria-hidden="true">→</span></span>
+      <span class="dots">${gs.map((g, i) => `<i class="${g.status !== "playing" ? g.status : g.rows.length ? "part" : ""}">${i + 1}</i>`).join("")}<span>${status}</span></span>
+    </button>
+    <div class="msec">Treinar</div>
+    <div class="mgrid">
+      ${card("single")}${card("timed")}${card("duo")}${card("quartet")}${card("archive", " wide")}
+    </div>
+    <div class="msec">Mais</div>
+    <div class="mlinks">
+      <button class="btn ghost" data-a="rank" type="button">Rankings</button>
+      <button class="btn ghost" data-a="profile" type="button">O meu perfil</button>
+      <button class="btn ghost" data-a="settings" type="button">Definições</button>
+      <button class="btn ghost" data-a="help" type="button">Como jogar</button>
+      ${me.is_admin ? `<button class="btn ghost" data-a="admin" type="button">Administração</button>` : ""}
+      <button class="btn ghost" data-a="out" type="button">Sair</button>
+    </div>
+  </div>`;
+  homeEl.querySelectorAll("[data-m]").forEach(b => b.onclick = () => setMode(b.dataset.m));
+  const acts = { rank: () => showRanking(), profile: () => showProfile(), settings: showSettings, help: showHelp, admin: showAdmin, out: logout };
+  homeEl.querySelectorAll("[data-a]").forEach(b => b.onclick = () => acts[b.dataset.a]());
+}
+function showHome(){
+  if (busy) return;
+  closeModals(); closeMenu();
+  if (mode === "timed" && prac && prac.status === "playing"){
+    confirmBox("Se saíres agora, o contra-relógio termina com as palavras que já acertaste.", "Sair", () => { endTimedQuiet(); showHome(); });
+    return;
+  }
+  stopTimed();
+  homeEl.hidden = false; document.body.classList.add("at-home");
+  renderHome();
+  clearInterval(homeTick);
+  homeTick = setInterval(() => { const c = $("#homeCd"); if (c && atHome()) c.textContent = countdownText(); }, 1000);
+  homeEl.scrollTop = 0;
+}
+function hideHome(){
+  clearInterval(homeTick);
+  homeEl.hidden = true; document.body.classList.remove("at-home");
+}
+async function endTimedQuiet(){
+  stopTimed();
+  if (prac && prac.status === "playing"){ prac.status = "done"; try{ await rpc("practice_finish", { p_id: prac.id }); }catch(e){} }
+}
+
 /* ---------- modes ---------- */
 async function setMode(m, opts){
   if (busy) return;
   closeModals(); closeMenu();
   if (m !== "timed") stopTimed();
+  if (m !== "archive") hideHome();
   if (m === "archive"){ showArchive(); return; }
   mode = m; resetCur();
-  if (m === "daily"){ builtShape = ""; if (opts && opts.slot != null) slot = opts.slot; renderAll(); return; }
+  if (m === "daily"){ builtShape = ""; slot = opts && opts.slot != null ? opts.slot : (daily.games[slot] && daily.games[slot].status === "playing" ? slot : firstOpen(daily.games)); renderAll(); fit(); return; }
   prac = null; builtShape = ""; renderAll();
   if (m === "timed"){ showTimedIntro(); return; }
   try{
@@ -746,7 +843,7 @@ async function newPractice(){
 async function openArchiveDay(d){
   try{
     const r = await rpc("get_day", { p_day: d });
-    archive = r; archSlot = firstOpen(r.games); mode = "archive"; resetCur(); builtShape = ""; closeModals(); renderAll();
+    archive = r; archSlot = firstOpen(r.games); mode = "archive"; resetCur(); builtShape = ""; closeModals(); hideHome(); renderAll(); fit();
   }catch(e){ toast(errMsg(e)); }
 }
 
@@ -784,7 +881,8 @@ async function endTimed(){
     <div class="result"><span class="word" style="font-size:44px">${r.score}</span><br>${r.score === 1 ? "palavra acertada" : "palavras acertadas"}</div>
     ${ans ? `<p class="note">A última palavra era <b>${esc(ans)}</b>.</p>` : ""}
     <p class="note">O teu melhor resultado: <b>${r.best}</b></p>
-    <div class="center"><button class="btn primary" id="tAgain" type="button">Jogar outra vez</button><button class="btn ghost" id="tRank" type="button">Ranking</button></div>`);
+    <div class="center"><button class="btn primary" id="tAgain" type="button">Jogar outra vez</button><button class="btn ghost" id="tRank" type="button">Ranking</button><button class="btn ghost" id="tHome" type="button">Início</button></div>`);
+  $("#tHome").onclick = showHome;
   $("#tAgain").onclick = startTimed;
   $("#tRank").onclick = () => showRanking("timed");
 }
@@ -859,7 +957,7 @@ function showHelp(){
   <h4>Modo difícil</h4>
   <p>As letras que já descobriste têm de ser usadas: as verdes no mesmo sítio, as amarelas em qualquer sítio. Cada vitória em modo difícil vale <b>+1 ponto</b>. Liga-o nas Definições; vale a partir do jogo seguinte que começares.</p>
   <h4>Treinar</h4>
-  <p>No menu tens o Arquivo (dias anteriores), o Treino (palavras aleatórias), o Dueto e o Quarteto (2 ou 4 palavras ao mesmo tempo, com 7 e 9 tentativas) e o Contra-relógio (quantas palavras acertas em 3 minutos). Nenhum conta para o ranking diário.</p>`);
+  <p>No ecrã inicial (botão de quadrados, em cima à esquerda) tens o Arquivo (dias anteriores), o Treino (palavras aleatórias), o Dueto e o Quarteto (2 ou 4 palavras ao mesmo tempo, com 7 e 9 tentativas) e o Contra-relógio (quantas palavras acertas em 3 minutos). Nenhum conta para o ranking diário.</p>`);
 }
 
 /* settings */
@@ -967,7 +1065,7 @@ async function showDayResult(){
     <div class="center"><button class="btn ghost small" id="seeOthers" type="button">Ver como jogaram os outros</button></div>
     <div class="foot">
       <div class="next"><small>Novas palavras em</small><b id="cd">${countdownText()}</b></div>
-      <div class="acts">${nextOpen >= 0 ? `<button class="btn primary" id="nextBtn" type="button">Jogo ${nextOpen + 1} →</button>` : `<span class="alldone">Jogaste os 5 de hoje!</span>`}</div>
+      <div class="acts">${nextOpen >= 0 ? `<button class="btn primary" id="nextBtn" type="button">Jogo ${nextOpen + 1} →</button>` : `<span class="alldone">Jogaste os 5 de hoje!</span><button class="btn ghost" id="homeBtn2" type="button">Ir treinar</button>`}</div>
     </div>
     <h3>Enviar os resultados de hoje</h3>
     ${shareButtons(txt)}`);
@@ -975,6 +1073,7 @@ async function showDayResult(){
   m.querySelectorAll("[data-go]").forEach(b => b.onclick = () => { slot = +b.dataset.go; resetCur(); closeModals(); renderAll(); });
   const nb = $("#nextBtn"); if (nb) nb.onclick = () => { slot = nextOpen; resetCur(); closeModals(); renderAll(); };
   $("#seeOthers").onclick = () => showSummary(d.day, slot);
+  const hb2 = $("#homeBtn2"); if (hb2) hb2.onclick = showHome;
   modalTimer = setInterval(() => { const c = $("#cd"); if (c) c.textContent = countdownText(); }, 1000);
   try{
     const r = await rpc("game_summary", { p_day: d.day, p_slot: slot });
@@ -1224,7 +1323,7 @@ function hardMsg(rows, guess){
 }
 
 function press(k){
-  if (!started || busy || anyOverlay()) return;
+  if (!started || busy || anyOverlay() || atHome()) return;
   const v = view(); if (!v || !v.playing) return;
   if (mode === "timed" && (!prac || prac.status !== "playing")) return;
   if (k === "BACK"){ if (cur[pos]) cur[pos] = ""; else if (pos > 0){ pos--; cur[pos] = ""; } renderBoards(); return; }
@@ -1341,11 +1440,11 @@ function showPracticeEnd(){
   const txt = `Palavrle · ${MODES[p.mode].name} · ${won ? (p.boards.length === 1 ? p.boards[0].rows.length + "/6" : p.guesses + "/" + p.max) : "X"}\n\n${grid}\n\n${siteUrl()}`;
   const m = openModal(`<h2>${won ? "Acertaste!" : "Desta vez não deu"}</h2>
     <div class="result">${p.boards.length > 1 ? "As palavras eram" : "A palavra era"}<br><span class="word">${words.map(esc).join(" · ")}</span></div>
-    <div class="center"><button class="btn primary" id="pAgain" type="button">Jogar outra vez</button><button class="btn ghost" id="pDaily" type="button">Jogo do dia</button></div>
+    <div class="center"><button class="btn primary" id="pAgain" type="button">Jogar outra vez</button><button class="btn ghost" id="pDaily" type="button">Início</button></div>
     <h3>Partilhar</h3>${shareButtons(txt)}`);
   wireShare(m, txt);
   $("#pAgain").onclick = newPractice;
-  $("#pDaily").onclick = () => setMode("daily");
+  $("#pDaily").onclick = showHome;
 }
 
 document.addEventListener("keydown", e => {
@@ -1368,11 +1467,11 @@ boardsEl.addEventListener("click", e => {
   const t = e.target.closest(".tile.active"); if (!t || busy) return;
   pos = +t.dataset.i; renderBoards();
 });
-$("#menuBtn").onclick = openMenu;
+$("#menuBtn").onclick = showHome;
 $("#helpBtn").onclick = showHelp;
 $("#rankBtn").onclick = () => showRanking();
 $("#profBtn").onclick = () => showProfile();
-$("#homeTitle").onclick = () => setMode("daily");
+$("#homeTitle").onclick = showHome;
 addEventListener("resize", fit);
 addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; });
 
@@ -1382,6 +1481,7 @@ async function refreshDay(){
   try{
     const old = daily.day; await loadDaily();
     if (daily.day !== old){ if (mode === "daily"){ resetCur(); builtShape = ""; renderAll(); } toast("Há palavras novas!"); }
+    if (atHome()) renderHome();
   }catch(e){}
 }
 setInterval(() => { if (started && secsLeftToday() <= 0) refreshDay(); }, 5000);
